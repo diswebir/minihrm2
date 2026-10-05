@@ -63,7 +63,7 @@ router.post('/login', async (req, res) => {
   }
 
   const session = await auth.createSession(result.user, req);
-  auth.setSessionCookie(res, session.sid, session.expires);
+  auth.setSessionCookie(res, session.sid, session.expires, req);
   req.setFlash('success', `${result.user.full_name} خوش آمدید.`);
   if (result.user.must_change_password) return res.redirect('/profile/password?force=1');
   return res.redirect(next);
@@ -140,7 +140,7 @@ router.post('/login/otp/verify', async (req, res) => {
   }
   await auth.registerSuccessfulLogin(req, user, 'رمز پیامکی');
   const session = await auth.createSession(user, req);
-  auth.setSessionCookie(res, session.sid, session.expires);
+  auth.setSessionCookie(res, session.sid, session.expires, req);
   req.setFlash('success', `${user.full_name} خوش آمدید.`);
   return res.redirect(next);
 });

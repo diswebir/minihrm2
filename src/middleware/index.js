@@ -62,7 +62,8 @@ function csrf() {
   return (req, res, next) => {
     if (!req.cookies.hrm_csrf) {
       const token = security.randomToken(24);
-      res.cookie('hrm_csrf', token, { sameSite: 'Strict' });
+      const httpsReq = /https/i.test(String(req.headers['x-forwarded-proto'] || '')) || Boolean(req.secure);
+      res.cookie('hrm_csrf', token, httpsReq ? { sameSite: 'None', secure: true } : { sameSite: 'Strict' });
       req.cookies.hrm_csrf = token;
     }
     req.csrfToken = () => req.cookies.hrm_csrf;

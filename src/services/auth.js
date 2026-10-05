@@ -39,11 +39,17 @@ async function createSession(user, req) {
   return { sid, csrf, expires };
 }
 
-function setSessionCookie(res, sid, expires) {
+/** حالت کوکی بر اساس پروتکل درخواست — برای کار در iframe پیش‌نمایش و HTTPS */
+function cookieMode(req) {
+  const proto = String((req && req.headers && (req.headers['x-forwarded-proto'] || req.protocol)) || '');
+  const https = /https/i.test(proto) || Boolean(req && req.secure);
+  return https ? { sameSite: 'None', secure: true } : { sameSite: 'Lax', secure: false };
+}
+
+function setSessionCookie(res, sid, expires, req) {
   res.cookie(COOKIE_NAME, security.sign(sid), {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: false,           // روی cPanel با SSL می‌توانید true کنید
+    ...cookieMode(req),
     expires,
     path: '/',
   });
