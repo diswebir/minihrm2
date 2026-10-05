@@ -1,0 +1,15 @@
+# وابستگی‌ها
+node_modules/
+
+# خروجی‌های نصب و داده‌های محلی
+storage/
+sql/
+dist/
+*.sqlite
+*.sqlite-journal
+*.log
+
+# فایل‌های موقت و سیستمی
+.DS_Store
+.env
+npm-debug.log*

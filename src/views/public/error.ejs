@@ -1,0 +1,10 @@
+<%- include('partials/head', { pageTitle: title || 'خطا', subtitle: '', company: { name: '' }, backUrl: '/apply' }) %>
+<div class="public-card" style="max-width:520px;margin:2rem auto">
+  <div class="public-body-inner center">
+    <div style="font-size:2.4rem"><%- icon('alert-circle', 'text-warning', 46) %></div>
+    <h1 style="font-size:1.1rem"><%= h.escapeHtml(title || 'خطا') %></h1>
+    <p class="muted"><%= h.escapeHtml(message || '') %></p>
+    <a class="btn btn-primary" href="/apply"><%- icon('home', '', 16) %> بازگشت به صفحه فرصت‌های شغلی</a>
+  </div>
+</div>
+<%- include('partials/foot', { company: { name: '' } }) %>

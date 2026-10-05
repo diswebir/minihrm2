@@ -1,0 +1,30 @@
+<%
+  var pageCode = typeof statusCode !== 'undefined' && statusCode ? statusCode : 404;
+  var heading = typeof title !== 'undefined' && title ? title : (pageCode === 403 ? 'دسترسی غیرمجاز' : 'صفحه یافت نشد');
+%>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= h.pnum(pageCode) %> | <%= typeof appName !== 'undefined' ? appName : 'مینی HRM' %></title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="error-page">
+  <div class="error-box card">
+    <div class="card-body">
+      <div class="error-code"><%= h.pnum(pageCode) %></div>
+      <h1><%= heading %></h1>
+      <p class="muted">
+        <% if (typeof message !== 'undefined' && message) { %><%= message %>
+        <% } else if (pageCode === 403) { %>شما مجوز دسترسی به این بخش را ندارید. در صورت نیاز با مدیر سامانه تماس بگیرید.
+        <% } else { %>آدرس واردشده وجود ندارد یا حذف شده است.<% } %>
+      </p>
+      <div class="btn-group">
+        <a class="btn btn-primary" href="/dashboard"><%- icon('home', '', 16) %> بازگشت به داشبورد</a>
+        <a class="btn" href="javascript:history.back()"><%- icon('arrow-right', '', 16) %> صفحه قبل</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

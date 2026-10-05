@@ -1,0 +1,141 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('send') %> ارسال گروهی پیامک</h1>
+    <p class="muted">ارسال پیام به گروه‌های پرسنلی از طریق سرویس IPPanel — متن پیام و گیرندگان را انتخاب کنید.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/messaging"><%- icon('arrow-right', '', 16) %> داشبورد پیامک</a>
+    <a class="btn" href="/messaging/logs"><%- icon('list', '', 16) %> گزارش ارسال</a>
+  </div>
+</div>
+
+<% if (result && result.done) { %>
+  <div class="alert alert-<%= result.failed ? 'warning' : 'success' %>">
+    <%- icon(result.failed ? 'alert' : 'check-circle') %>
+    <div>ارسال انجام شد: <b><%= h.pnum(result.sent) %></b> شماره موفق<% if (result.failed) { %> و <b><%= h.pnum(result.failed) %></b> ناموفق<% } %>.</div>
+  </div>
+<% } %>
+
+<% if (!status || !status.enabled || !status.configured) { %>
+  <div class="alert alert-warning">
+    <%- icon('alert') %>
+    <div>
+      سامانه پیامک فعال نیست. تا زمانی که سرویس در
+      <a class="link" href="/settings/sms">تنظیمات پیامک</a>
+      پیکربندی نشود، ارسال واقعی انجام نمی‌شود (می‌توانید پیام را ثبت کنید تا در گزارش بماند).
+    </div>
+  </div>
+<% } %>
+
+<div class="grid-2" style="grid-template-columns:2fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('edit') %> متن و گیرندگان</h3></div>
+    <div class="card-body">
+      <form method="post" action="/messaging/send" data-guard>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-row">
+          <div class="col-6">
+            <div class="form-group">
+              <label class="field-label">گروه گیرندگان</label>
+              <select name="audience" id="audienceSelect">
+                <% Object.keys(audiences).forEach(function (k) { %>
+                  <option value="<%= k %>"><%= audiences[k].label %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="col-6" id="departmentBox" style="display:none">
+            <div class="form-group">
+              <label class="field-label">واحد سازمانی</label>
+              <select name="department_id">
+                <% (departments || []).forEach(function (d) { %>
+                  <option value="<%= d.id %>"><%= h.escapeHtml(d.name) %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="col-12" id="customBox" style="display:none">
+            <div class="form-group">
+              <label class="field-label">شماره‌های دلخواه</label>
+              <textarea name="custom_mobiles" rows="3" dir="ltr" placeholder="0912..., 0935..."></textarea>
+              <span class="field-help">شماره‌ها را با کاما، فاصله یا خط جدید جدا کنید.</span>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="form-group">
+              <label class="field-label">قالب آماده (اختیاری)</label>
+              <select id="templateSelect">
+                <option value="">— انتخاب قالب برای درج در متن —</option>
+                <% (templates || []).forEach(function (t) { %>
+                  <option value="<%= t.id %>" data-body="<%= h.escapeHtml(t.body || '') %>"><%= h.escapeHtml(t.title) %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="form-group">
+              <label class="field-label">متن پیامک <span class="req">*</span></label>
+              <textarea name="message" id="messageBody" rows="5" required maxlength="500" placeholder="متن پیام..."></textarea>
+              <span class="field-help">حداکثر ۵۰۰ نویسه. شمارش نویسه‌ها: <span id="charCount">۰</span></span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="form-group">
+              <label class="field-label">شماره فرستنده (اختیاری)</label>
+              <input type="text" name="sender" dir="ltr" value="<%= h.escapeHtml((status && status.sender) || '') %>">
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="form-group">
+              <label class="field-label">ارسال آزمایشی به شماره</label>
+              <input type="text" name="test_mobile" dir="ltr" placeholder="0912...">
+              <span class="field-help">در صورت پر بودن، فقط یک پیامک آزمایشی به این شماره ارسال می‌شود.</span>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group mt-2">
+          <button class="btn btn-primary" type="submit"><%- icon('send', '', 16) %> ارسال</button>
+          <a class="btn" href="/messaging"><%- icon('x', '', 16) %> انصراف</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('info') %> راهنما</h3></div>
+    <div class="card-body">
+      <ul class="list-plain">
+        <li><%- icon('check', '', 16) %><div>ارسال گروهی با وب‌سرویس IPPanel انجام می‌شود و شماره فرستنده باید در پنل IPPanel تأیید شده باشد.</div></li>
+        <li><%- icon('check', '', 16) %><div>شماره‌ها به‌صورت خودکار به قالب بین‌المللی (‎+98‎) تبدیل می‌شوند.</div></li>
+        <li><%- icon('check', '', 16) %><div>هر ارسال در «گزارش ارسال» با وضعیت موفق/ناموفق ثبت می‌شود.</div></li>
+        <li><%- icon('check', '', 16) %><div>برای کد ورود داوطلبان، از الگوی (Pattern) استفاده می‌شود؛ تنظیمات آن در بخش پیامک است.</div></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var sel = document.getElementById('audienceSelect');
+  var dep = document.getElementById('departmentBox');
+  var cus = document.getElementById('customBox');
+  function sync() {
+    if (!sel) return;
+    dep.style.display = sel.value === 'department' ? '' : 'none';
+    cus.style.display = sel.value === 'custom' ? '' : 'none';
+  }
+  if (sel) { sel.addEventListener('change', sync); sync(); }
+  var tpl = document.getElementById('templateSelect');
+  var body = document.getElementById('messageBody');
+  var count = document.getElementById('charCount');
+  if (tpl && body) {
+    tpl.addEventListener('change', function () {
+      var opt = tpl.options[tpl.selectedIndex];
+      if (opt && opt.dataset.body) { body.value = opt.dataset.body; update(); }
+    });
+  }
+  function update() { if (count && body) count.textContent = String(body.value.length); }
+  if (body) body.addEventListener('input', update);
+  update();
+})();
+</script>

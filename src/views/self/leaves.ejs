@@ -1,0 +1,85 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('calendar') %> مرخصی‌های من</h1>
+    <p class="muted">مانده مرخصی سال <%= h.pnum(year) %>، ثبت درخواست جدید و پیگیری وضعیت</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/self/attendance"><%- icon('clock', '', 16) %> کارکرد من</a>
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <% (balances || []).forEach(function (b) {
+       var used = Number(b.used || 0) + Number(b.pending || 0);
+       var total = Number(b.total || b.quota || 0) || (Number(b.accrued || 0) + Number(b.carried || 0));
+       var remain = Math.max(0, total - used);
+  %>
+    <div class="kpi-card kpi-primary">
+      <span class="kpi-icon"><%- icon('calendar', '', 22) %></span>
+      <span class="kpi-body">
+        <span class="kpi-value"><%= h.pnum(remain) %> روز</span>
+        <span class="kpi-label">مانده <%= h.escapeHtml(b.type_name || '') %></span>
+        <% if (b.pending) { %><span class="kpi-hint"><%= h.pnum(b.pending) %> روز در انتظار تأیید</span><% } %>
+      </span>
+    </div>
+  <% }); %>
+  <% if (!balances || !balances.length) { %>
+    <div class="kpi-card kpi-muted"><span class="kpi-icon"><%- icon('info', '', 22) %></span>
+      <span class="kpi-body"><span class="kpi-value">—</span><span class="kpi-label">مانده مرخصی ثبت نشده است</span></span></div>
+  <% } %>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1.2fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('plus-circle') %> ثبت درخواست مرخصی</h3></div>
+    <div class="card-body">
+      <form method="post" action="/self/leaves" data-guard>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-row">
+          <div class="col-12"><div class="form-group"><label class="field-label">نوع مرخصی <span class="req">*</span></label>
+            <select name="leave_type_id" required>
+              <option value="">— انتخاب کنید —</option>
+              <% (types || []).forEach(function (t) { %>
+                <option value="<%= t.id %>"><%= h.escapeHtml(t.name) %><%= t.is_paid ? '' : ' (بدون حقوق)' %></option>
+              <% }); %>
+            </select></div></div>
+          <div class="col-6"><div class="form-group"><label class="field-label">از تاریخ <span class="req">*</span></label>
+            <input type="text" name="from_date" required placeholder="1404/07/01" data-jalali></div></div>
+          <div class="col-6"><div class="form-group"><label class="field-label">تا تاریخ <span class="req">*</span></label>
+            <input type="text" name="to_date" required placeholder="1404/07/03" data-jalali></div></div>
+          <div class="col-6"><div class="form-group"><label class="field-label">ساعت (برای مرخصی ساعتی)</label>
+            <input type="text" name="hours" data-numeric placeholder="2"></div></div>
+          <div class="col-6"><div class="form-group"><label class="field-label">شماره تماس در طول مرخصی</label>
+            <input type="text" name="contact" dir="ltr" value="<%= h.escapeHtml(employee.mobile || '') %>"></div></div>
+          <div class="col-12"><div class="form-group"><label class="field-label">دلیل / توضیح</label>
+            <textarea name="reason" rows="2" placeholder="توضیح کوتاه"></textarea></div></div>
+        </div>
+        <button class="btn btn-primary" type="submit"><%- icon('send', '', 16) %> ثبت و ارسال برای تأیید</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('list') %> درخواست‌های من</h3></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead><tr><th>نوع</th><th>از</th><th>تا</th><th>روز</th><th>وضعیت</th></tr></thead>
+          <tbody>
+            <% (requests || []).forEach(function (r) { %>
+              <tr>
+                <td><%= h.escapeHtml(r.type_name || '—') %></td>
+                <td><%= j.formatJalaali(r.from_date) %></td>
+                <td><%= j.formatJalaali(r.to_date) %></td>
+                <td class="num"><%= h.pnum(r.days || 0) %></td>
+                <td><%- h.statusLabel ? '' : '' %><%= '' %><span class="badge <%= r.status === 'approved' ? 'success' : (r.status === 'rejected' ? 'danger' : 'warning') %>"><%= r.status === 'approved' ? 'تأییدشده' : (r.status === 'rejected' ? 'ردشده' : 'در انتظار') %></span></td>
+              </tr>
+            <% }); %>
+            <% if (!requests || !requests.length) { %><tr><td colspan="5" class="muted center">درخواستی ثبت نشده است.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

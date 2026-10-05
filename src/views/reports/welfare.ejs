@@ -1,0 +1,63 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('heart') %> گزارش رفاهیات</h1>
+    <p class="muted">مصرف غذا، استفاده از سرویس ایاب و ذهاب و بهره‌برداری از امکانات رفاهی</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/reports"><%- icon('arrow-right', '', 16) %> همه گزارش‌ها</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('utensils') %> مصرف غذا (۱۴ روز اخیر)</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>تاریخ</th><th>رزرو</th><th>پرس</th></tr></thead>
+        <tbody>
+          <% (meals || []).forEach(function (m) { %>
+            <tr>
+              <td><%= m.meal_date ? j.formatJalaali(m.meal_date) : '—' %></td>
+              <td class="num"><%= h.pnum(m.c) %></td>
+              <td class="num"><%= h.pnum(m.portions || 0) %></td>
+            </tr>
+          <% }); %>
+          <% if (!meals || !meals.length) { %><tr><td colspan="3" class="muted center">داده‌ای موجود نیست.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('bus') %> استفاده از مسیرهای سرویس</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>مسیر</th><th>کارکنان فعال</th></tr></thead>
+        <tbody>
+          <% (transport || []).forEach(function (t) { %>
+            <tr><td><%= h.escapeHtml(t.name || '—') %></td><td class="num"><%= h.pnum(t.c) %></td></tr>
+          <% }); %>
+          <% if (!transport || !transport.length) { %><tr><td colspan="2" class="muted center">داده‌ای موجود نیست.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('sparkles') %> بهره‌برداری از امکانات رفاهی</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>امکان</th><th>تعداد رزرو</th></tr></thead>
+        <tbody>
+          <% (facilities || []).forEach(function (f) { %>
+            <tr><td><%= h.escapeHtml(f.name || '—') %></td><td class="num"><%= h.pnum(f.c) %></td></tr>
+          <% }); %>
+          <% if (!facilities || !facilities.length) { %><tr><td colspan="2" class="muted center">داده‌ای موجود نیست.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

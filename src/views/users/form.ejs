@@ -1,0 +1,125 @@
+<%
+  var v = function (k, d) { return (row && row[k] !== undefined && row[k] !== null) ? row[k] : (d || ''); };
+%>
+<div class="page-head">
+  <div>
+    <h1><%- icon(isNew ? 'user-plus' : 'user') %> <%= h.escapeHtml(title) %></h1>
+    <p class="muted">
+      <% if (isNew) { %>کاربر می‌تواند به سامانه وارد شود؛ دسترسی‌های او از نقش انتخاب‌شده تعیین می‌گردد.<% } else { %>تغییر نقش، دسترسی‌های کاربر را بلافاصله تغییر می‌دهد.<% } %>
+    </p>
+  </div>
+  <div class="page-actions"><a class="btn" href="/users"><%- icon('arrow-right', '', 16) %> فهرست کاربران</a></div>
+</div>
+
+<% if (Object.keys(errors || {}).length) { %>
+  <div class="alert alert-danger"><%- icon('alert') %><div>
+    <b>لطفاً خطاهای زیر را برطرف کنید:</b>
+    <ul style="margin:.4rem 0 0 1rem"><% Object.keys(errors).forEach(function (k) { %><li><%= h.escapeHtml(errors[k]) %></li><% }); %></ul>
+  </div></div>
+<% } %>
+
+<form method="post" action="<%= isNew ? '/users' : '/users/' + row.id %>" data-guard>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('user') %> مشخصات کاربر</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">نام و نام خانوادگی <span class="req">*</span></label>
+          <input type="text" name="full_name" value="<%= h.escapeHtml(v('full_name')) %>" required></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">نام کاربری <span class="req">*</span></label>
+          <input type="text" name="username" dir="ltr" value="<%= h.escapeHtml(v('username')) %>" <%= isNew ? 'required' : 'readonly' %> placeholder="a.hoseini">
+          <span class="field-help">حروف کوچک لاتین، عدد، نقطه، خط تیره و زیرخط — ۳ تا ۴۰ کاراکتر</span></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">نقش <span class="req">*</span></label>
+          <select name="role_id" required>
+            <option value="">— انتخاب نقش —</option>
+            <% roles.forEach(function (r) { %>
+              <option value="<%= r.id %>" <%= String(v('role_id')) === String(r.id) ? 'selected' : '' %>><%= h.escapeHtml(r.name) %><%= r.scope ? ' — ' + h.escapeHtml(r.scope) : '' %></option>
+            <% }); %>
+          </select></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">موبایل</label>
+          <input type="text" name="mobile" dir="ltr" value="<%= h.escapeHtml(v('mobile')) %>" placeholder="09123456789"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">ایمیل</label>
+          <input type="text" name="email" dir="ltr" value="<%= h.escapeHtml(v('email')) %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">وضعیت</label>
+          <select name="status">
+            <option value="active" <%= v('status', 'active') === 'active' ? 'selected' : '' %>>فعال</option>
+            <option value="inactive" <%= v('status') === 'inactive' ? 'selected' : '' %>>غیرفعال</option>
+            <option value="suspended" <%= v('status') === 'suspended' ? 'selected' : '' %>>معلق</option>
+          </select></div></div>
+
+        <div class="col-6">
+          <div class="form-group"><label class="field-label">اتصال به پرونده پرسنلی (اختیاری)</label>
+            <select name="employee_id">
+              <option value="">— بدون اتصال —</option>
+              <% employees.forEach(function (e) { %>
+                <option value="<%= e.id %>" <%= String(v('employee_id')) === String(e.id) ? 'selected' : '' %>><%= h.escapeHtml(e.full_name) %><%= e.personnel_code ? ' (' + h.escapeHtml(e.personnel_code) + ')' : '' %></option>
+              <% }); %>
+            </select>
+            <span class="field-help">با اتصال به پرونده پرسنلی، کاربر به سلف‌سرویس (فیش حقوقی، مرخصی، دوره‌ها) دسترسی پیدا می‌کند.</span>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="check mt-2"><input type="checkbox" name="must_change_password" value="1" <%= v('must_change_password') ? 'checked' : '' %>><span class="check-label">کاربر در نخستین ورود، گذرواژه را تغییر دهد</span></label>
+        </div>
+
+        <% if (isNew) { %>
+          <div class="col-6"><div class="form-group"><label class="field-label">گذرواژه <span class="req">*</span></label>
+            <input type="password" name="password" id="password" dir="ltr" required autocomplete="new-password">
+            <div class="strength-bar"><span></span></div></div></div>
+          <div class="col-6"><div class="form-group"><label class="field-label">تکرار گذرواژه <span class="req">*</span></label>
+            <input type="password" name="password2" dir="ltr" required autocomplete="new-password"></div></div>
+        <% } else { %>
+          <div class="col-12">
+            <div class="alert alert-info mb-0"><%- icon('key') %><div>برای تغییر گذرواژه این کاربر، از دکمه «بازنشانی گذرواژه» در فهرست کاربران استفاده کنید؛ گذرواژه موقت ساخته و به شما نمایش داده می‌شود.</div></div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <% if (!isNew && sessions && sessions.length) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('monitor') %> نشست‌های فعال و تاریخچه ورود</h3></div>
+      <div class="card-body">
+        <div class="table-wrap">
+          <table class="table compact">
+            <thead><tr><th>دستگاه</th><th>IP</th><th>شروع</th><th>انقضا</th></tr></thead>
+            <tbody>
+              <% sessions.forEach(function (s) { %>
+                <tr>
+                  <td class="small"><%= h.escapeHtml(h.truncate(s.user_agent || '—', 60)) %></td>
+                  <td dir="ltr"><%= h.escapeHtml(s.ip || '—') %></td>
+                  <td class="nowrap small"><%= j.formatJalaaliDateTime(s.created_at) %></td>
+                  <td class="nowrap small"><%= j.formatJalaaliDateTime(s.expires_at) %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% if (logins && logins.length) { %>
+          <h4 class="mt-2" style="font-size:.9rem">آخرین ورودها</h4>
+          <div class="table-wrap">
+            <table class="table compact">
+              <thead><tr><th>زمان</th><th>وضعیت</th><th>IP</th></tr></thead>
+              <tbody>
+                <% logins.forEach(function (l) { %>
+                  <tr>
+                    <td class="nowrap small"><%= j.formatJalaaliDateTime(l.created_at) %></td>
+                    <td><span class="badge <%= l.success ? 'success' : 'danger' %>"><%= l.success ? 'موفق' : 'ناموفق' %></span></td>
+                    <td dir="ltr" class="small"><%= h.escapeHtml(l.ip || '') %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="sticky-actions">
+    <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> <%= isNew ? 'ایجاد کاربر' : 'ذخیره تغییرات' %></button>
+    <a class="btn" href="/users">انصراف</a>
+  </div>
+</form>

@@ -1,0 +1,46 @@
+<%- include('partials/head', { pageTitle: 'ارسال موفق فرم', subtitle: 'پایان فرم استخدام', company: company, backUrl: null }) %>
+
+<div class="public-card" style="max-width:620px;margin:0 auto">
+  <div class="public-body-inner center">
+    <div style="font-size:2.6rem"><%- icon('check-circle', 'text-success', 54) %></div>
+    <h1 style="font-size:1.15rem">اطلاعات شما با موفقیت ثبت شد</h1>
+    <p class="muted">
+      <% if (app) { %>
+        کد پیگیری پرونده شما: <b dir="ltr" style="font-size:1.05rem"><%= h.escapeHtml(app.code || code) %></b>
+        <span class="muted small" style="display:block;margin-top:.3rem">این کد را برای پیگیری وضعیت نزد خود نگه دارید.</span>
+      <% } %>
+    </p>
+
+    <div class="alert alert-info" style="text-align:right">
+      <%- icon('info') %>
+      <div>
+        کارشناسان منابع انسانی اطلاعات شما را بررسی می‌کنند و در صورت نیاز با شما تماس می‌گیرند.
+        <% if (invite && invite.mobile) { %> شماره تماس ثبت‌شده: <b dir="ltr"><%= h.pnum(invite.mobile) %></b><% } %>
+      </div>
+    </div>
+
+    <% if (assessment && assessmentOn) { %>
+      <div class="card" style="box-shadow:none; text-align:right">
+        <div class="card-header"><h3><%- icon('brain') %> گام بعدی: آزمون شخصیت‌شناسی</h3></div>
+        <div class="card-body">
+          <p class="muted small">
+            برای شناخت بهتر سبک کاری و همکاری شما، لطفاً یک آزمون کوتاه (حدود ۱۰ دقیقه) را تکمیل کنید.
+            این آزمون پاسخ درست یا غلط ندارد و نتیجه تحلیل آن به شما نمایش داده نمی‌شود.
+          </p>
+          <a class="btn btn-primary btn-block" href="/apply/assessment/<%= assessment.token %>">
+            <%- icon('play', '', 16) %> شروع آزمون
+          </a>
+        </div>
+      </div>
+    <% } else if (assessmentOn) { %>
+      <p class="muted small">اگر آزمون شخصیت‌شناسی برای شما فعال شده باشد، لینک آن برایتان پیامک خواهد شد.</p>
+    <% } %>
+
+    <div class="btn-group mt-3" style="justify-content:center">
+      <a class="btn" href="/apply/status?code=<%= encodeURIComponent(code) %>"><%- icon('search', '', 16) %> پیگیری وضعیت پرونده</a>
+      <a class="btn" href="/apply"><%- icon('home', '', 16) %> صفحه فرصت‌های شغلی</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot', { company: company }) %>

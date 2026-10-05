@@ -1,0 +1,65 @@
+<div class="card">
+  <div class="card-header">
+    <div class="profile-header" style="flex:1">
+      <span class="avatar lg" style="background: <%= h.colorFromString(user.full_name) %>"><%= h.escapeHtml(h.initials(user.full_name)) %></span>
+      <div class="info">
+        <div class="name"><%= h.escapeHtml(user.full_name) %></div>
+        <div class="meta-row">
+          <span class="item"><%- icon('shield', '', 15) %> <%= h.escapeHtml(user.role_name || 'بدون نقش') %></span>
+          <span class="item"><%- icon('user', '', 15) %> <span dir="ltr"><%= h.escapeHtml(user.username) %></span></span>
+          <% if (employee) { %>
+            <span class="item"><%- icon('hash', '', 15) %> کد پرسنلی: <%= h.pnum(employee.personnel_code || '—') %></span>
+            <span class="item"><%- icon('briefcase', '', 15) %> <%= h.escapeHtml(employee.job_title_name || '—') %> / <%= h.escapeHtml(employee.department_name || '—') %></span>
+            <span class="item"><%- icon('calendar', '', 15) %> استخدام: <%= j.formatJalaali(employee.hire_date) %></span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/profile/password"><%- icon('key', '', 16) %> تغییر گذرواژه</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="post" action="/profile" style="max-width:640px">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-row">
+        <div class="col-6"><div class="form-group">
+          <label class="field-label">نام و نام خانوادگی</label>
+          <input type="text" name="full_name" value="<%= h.escapeHtml(user.full_name) %>" required>
+        </div></div>
+        <div class="col-6"><div class="form-group">
+          <label class="field-label">شماره موبایل</label>
+          <input type="tel" name="mobile" value="<%= h.escapeHtml(user.mobile || '') %>" dir="ltr">
+        </div></div>
+        <div class="col-6"><div class="form-group">
+          <label class="field-label">ایمیل</label>
+          <input type="email" name="email" value="<%= h.escapeHtml(user.email || '') %>" dir="ltr">
+        </div></div>
+      </div>
+      <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> ذخیره تغییرات</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('activity') %> آخرین ورودها</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>تاریخ</th><th>وضعیت</th><th>روش</th><th>IP</th><th>مرورگر</th></tr></thead>
+        <tbody>
+          <% logins.forEach(function (l) { %>
+            <tr>
+              <td class="nowrap"><%= j.formatJalaaliDateTime(l.created_at) %></td>
+              <td><% if (Number(l.ok)) { %><span class="badge success">موفق</span><% } else { %><span class="badge danger">ناموفق</span><% } %></td>
+              <td><%= h.escapeHtml(l.reason || '—') %></td>
+              <td dir="ltr"><%= h.escapeHtml(l.ip || '—') %></td>
+              <td class="truncate" style="max-width:280px"><%= h.escapeHtml(h.truncate(l.user_agent || '—', 60)) %></td>
+            </tr>
+          <% }); %>
+          <% if (!logins.length) { %><tr><td colspan="5" class="muted center">موردی ثبت نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

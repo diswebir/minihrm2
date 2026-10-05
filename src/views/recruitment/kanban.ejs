@@ -1,0 +1,84 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('kanban') %> کانبان استخدام</h1>
+    <p class="muted">کارت هر داوطلب را با کشیدن و رها کردن (Drag &amp; Drop) یا از منوی هر کارت به مرحله بعد منتقل کنید.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/recruitment/applications"><%- icon('list', '', 16) %> نمای فهرستی</a>
+    <a class="btn btn-primary" href="/recruitment/invites/new"><%- icon('qrcode', '', 16) %> دعوت داوطلب جدید</a>
+  </div>
+</div>
+
+<div class="kanban" id="kanban" data-can-move="<%= canMove ? '1' : '0' %>">
+  <% columns.forEach(function (col) { %>
+    <div class="kanban-col" data-stage="<%= col.key %>">
+      <div class="kanban-col-header">
+        <span class="dot bg-<%= col.color || 'primary' %>" style="width:9px;height:9px;border-radius:50%;display:inline-block"></span>
+        <span><%= h.escapeHtml(col.name) %></span>
+        <span class="badge muted" style="margin-right:auto"><%= h.pnum(col.count) %></span>
+      </div>
+      <div class="kanban-cards" data-stage="<%= col.key %>">
+        <% col.cards.forEach(function (card) { %>
+          <div class="kanban-card" draggable="<%= canMove ? 'true' : 'false' %>" data-id="<%= card.id %>">
+            <div class="c-title"><a href="<%= card.url %>" class="link"><%= h.escapeHtml(card.name) %></a></div>
+            <div class="c-desc"><%= h.escapeHtml(card.job || 'بدون موقعیت مشخص') %></div>
+            <div class="meta-row">
+              <span class="muted small" dir="ltr"><%= h.pnum(card.mobile || '') %></span>
+              <span class="muted small"><%= card.date %></span>
+            </div>
+            <% if (card.score) { %><div class="meta-row"><span class="badge info">امتیاز <%= h.pnum(card.score) %></span></div><% } %>
+            <% if (canMove) { %>
+              <div class="row-actions" style="margin-top:.4rem">
+                <% columns.forEach(function (other) { if (other.key === col.key) return; %>
+                  <button class="btn btn-sm" type="button" data-move="<%= card.id %>" data-to="<%= other.key %>"><%= h.escapeHtml(other.name) %></button>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+        <% if (!col.cards.length) { %><div class="empty-state" style="padding:1rem"><p class="muted small center">خالی</p></div><% } %>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<% if (!columns.length) { %>
+  <div class="card"><div class="card-body"><div class="empty-state"><%- icon('steps', '', 40) %>
+    <p class="muted">هنوز مرحله‌ای برای فرآیند استخدام تعریف نشده است.</p>
+    <a class="btn btn-primary" href="/recruitment/stages">تعریف مراحل استخدام</a></div></div></div>
+<% } %>
+
+<script>
+(function () {
+  var kanban = document.getElementById('kanban');
+  if (!kanban) return;
+  var canMove = kanban.dataset.canMove === '1';
+  var dragging = null;
+
+  function move(id, stage) {
+    HRM.post('/recruitment/applications/' + id + '/stage', { stage: stage }).then(function (res) {
+      HRM.toast(res.message || 'منتقل شد', 'success');
+      setTimeout(function () { location.reload(); }, 500);
+    }).catch(function (e) { HRM.toast(e.message || 'خطا در انتقال', 'danger'); });
+  }
+
+  kanban.querySelectorAll('[data-move]').forEach(function (btn) {
+    btn.addEventListener('click', function () { move(btn.dataset.move, btn.dataset.to); });
+  });
+
+  if (!canMove) return;
+  kanban.querySelectorAll('.kanban-card').forEach(function (card) {
+    card.addEventListener('dragstart', function () { dragging = card; card.classList.add('dragging'); });
+    card.addEventListener('dragend', function () { card.classList.remove('dragging'); dragging = null; });
+  });
+  kanban.querySelectorAll('.kanban-cards').forEach(function (zone) {
+    zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', function () { zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', function (e) {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      if (!dragging) return;
+      move(dragging.dataset.id, zone.dataset.stage);
+    });
+  });
+})();
+</script>

@@ -1,0 +1,170 @@
+<%
+  var pct = helpers.jsonParse(r.percentages, {}) || {};
+  var axes = helpers.jsonParse(r.closeness, []) || [];
+  function asList(v) {
+    var arr = helpers.jsonParse(v, null);
+    if (Array.isArray(arr)) return arr;
+    if (typeof v === 'string' && v.trim()) return v.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    return [];
+  }
+  var strengths = asList(r.strengths);
+  var watchouts = asList(r.watchouts);
+  var suggestions = asList(r.suggestions);
+  var jobFit = asList(r.job_fit);
+  var borderline = asList(r.borderline_axes);
+  var person = r.employee_name || r.applicant_name || '—';
+  var axisDefs = [
+    { key: 'EI', left: 'E', right: 'I', title: 'منبع انرژی (برون‌گرا / درون‌گرا)' },
+    { key: 'SN', left: 'S', right: 'N', title: 'دریافت اطلاعات (واقع‌گرا / شهودی)' },
+    { key: 'TF', left: 'T', right: 'F', title: 'تصمیم‌گیری (منطقی / احساسی)' },
+    { key: 'JP', left: 'J', right: 'P', title: 'سبک زندگی (منضبط / ملاحظه‌کار)' }
+  ];
+%>
+<div class="page-head no-print">
+  <div>
+    <h1><%- icon('brain') %> تحلیل شخصیت‌شناسی <%= h.escapeHtml(person) %></h1>
+    <p class="muted">
+      <%= r.personnel_code ? 'کد پرسنلی: ' + h.pnum(r.personnel_code) + ' — ' : '' %>
+      <%= r.applicant_code ? 'کد پرونده: ' + h.escapeHtml(r.applicant_code) + ' — ' : '' %>
+      آزمون: <%= h.escapeHtml(r.test_id ? '' : '') %> <%= r.job_title ? 'موقعیت: ' + h.escapeHtml(r.job_title) + ' — ' : '' %>
+      تاریخ: <%= jalali.formatJalaaliDateTime(r.created_at) %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/assessment/results"><%- icon('list', '', 16) %> فهرست نتایج</a>
+    <% if (r.application_id) { %><a class="btn" href="/recruitment/applications/<%= r.application_id %>"><%- icon('user', '', 16) %> پرونده داوطلب</a><% } %>
+    <% if (r.employee_id) { %><a class="btn" href="/employees/<%= r.employee_id %>"><%- icon('user', '', 16) %> پرونده کارمند</a><% } %>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="confidential-banner no-print">
+  <%- icon('lock') %>
+  <div><b>سند محرمانه:</b> این تحلیل شخصیتی فقط برای منابع انسانی و مدیریت قابل مشاهده است و به کارمند یا داوطلب نمایش داده نمی‌شود.
+    استفاده از آن باید در چارچوب ارزیابی شغلی و با در نظر گرفتن سایر شواهد باشد.</div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="mbti-head">
+      <div class="mbti-type"><%= h.escapeHtml(r.type_code || '') %></div>
+      <div>
+        <div class="mbti-title"><%= h.escapeHtml(r.group_name || '') %></div>
+        <div class="muted small">
+          اعتماد تحلیل:
+          <span class="badge <%= r.confidence === 'بالا' ? 'success' : r.confidence === 'پایین' ? 'danger' : 'warning' %>"><%= h.escapeHtml(r.confidence || '') %></span>
+          <% if (borderline.length) { %> — محورهای مرزی: <%= borderline.map(function (a) { return h.escapeHtml(a); }).join('، ') %><% } %>
+          <% if (jobMatch) { %> — تطابق با موقعیت فعلی: <b><%= h.pnum(jobMatch) %>٪</b><% } %>
+        </div>
+      </div>
+    </div>
+
+    <p><%= h.escapeHtml(r.summary || '') %></p>
+
+    <div class="axes">
+      <% axisDefs.forEach(function (a) {
+           var leftPct = Number(pct[a.left] || 50);
+           var rightPct = 100 - leftPct;
+           var winner = leftPct >= rightPct ? a.left : a.right;
+      %>
+        <div class="axis">
+          <div class="axis-head">
+            <span class="<%= leftPct > rightPct ? 'strong' : '' %>"><b dir="ltr"><%= a.left %></b> <span class="muted">(<%= h.pnum(leftPct) %>٪)</span></span>
+            <span class="muted small"><%= h.escapeHtml(a.title) %></span>
+            <span class="<%= rightPct > leftPct ? 'strong' : '' %>"><span class="muted">(<%= h.pnum(rightPct) %>٪)</span> <b dir="ltr"><%= a.right %></b></span>
+          </div>
+          <div class="axis-track"><span style="width:<%= leftPct %>%"></span></div>
+          <div class="muted small mt-1">غلبه قطب <b dir="ltr"><%= winner %></b></div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('thumbs-up') %> نقاط قوت</h3></div>
+    <div class="card-body"><ul class="list-plain">
+      <% strengths.forEach(function (s) { %><li><%- icon('check', '', 15) %><div style="flex:1"><%= h.escapeHtml(s) %></div></li><% }); %>
+      <% if (!strengths.length) { %><li class="muted">ثبت نشده است.</li><% } %>
+    </ul></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('alert-circle') %> نکات قابل توجه</h3></div>
+    <div class="card-body"><ul class="list-plain">
+      <% watchouts.forEach(function (s) { %><li><%- icon('alert', '', 15) %><div style="flex:1"><%= h.escapeHtml(s) %></div></li><% }); %>
+      <% if (!watchouts.length) { %><li class="muted">ثبت نشده است.</li><% } %>
+    </ul></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('message-square') %> سبک ارتباط، رهبری و انگیزه</h3></div>
+  <div class="card-body">
+    <div class="dl">
+      <div class="item"><span class="label">سبک ارتباط</span><span class="value"><%= h.escapeHtml(r.communication || '—') %></span></div>
+      <div class="item"><span class="label">سبک رهبری و کار تیمی</span><span class="value"><%= h.escapeHtml(r.leadership || '—') %></span></div>
+      <div class="item"><span class="label">انگیزه‌بخش‌ها</span><span class="value"><%= h.escapeHtml(r.motivation || '—') %></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('target') %> تناسب شغلی و پیشنهادهای مدیریتی</h3></div>
+  <div class="card-body">
+    <% if (jobFit.length) { %>
+      <div class="axes">
+        <% jobFit.forEach(function (f) { %>
+          <div class="axis">
+            <div class="axis-head"><span><%= h.escapeHtml(f.title || f.role || '') %></span><b><%= h.pnum(f.fit || f.score || 0) %>٪</b></div>
+            <div class="axis-track"><span style="width:<%= Number(f.fit || f.score || 0) %>%"></span></div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+    <% if (r.fit_notes) { %><p class="muted"><b>مشاغل پیشنهادی:</b> <%= h.escapeHtml(r.fit_notes) %></p><% } %>
+    <ul class="list-plain">
+      <% suggestions.forEach(function (s) { %><li><%- icon('chevron-left', '', 15) %><div style="flex:1"><%= h.escapeHtml(s) %></div></li><% }); %>
+    </ul>
+    <% if (r.risk_notes) { %>
+      <div class="alert alert-warning mt-2"><%- icon('alert') %><div><b>ملاحظات ریسک (محرمانه):</b> <%= h.escapeHtml(r.risk_notes) %></div></div>
+    <% } %>
+  </div>
+</div>
+
+<% if (answers && answers.length) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('list') %> پاسخ‌های خام آزمون (<%= h.pnum(answers.length) %> سؤال)</h3></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead><tr><th>#</th><th>سؤال</th><th>پاسخ</th><th>قطب</th></tr></thead>
+          <tbody>
+            <% answers.forEach(function (a, i) { %>
+              <tr>
+                <td><%= h.pnum(i + 1) %></td>
+                <td><%= h.escapeHtml(a.question_text || '') %></td>
+                <td><span class="badge muted" dir="ltr"><%= h.escapeHtml(a.choice || '') %></span></td>
+                <td><span class="badge info" dir="ltr"><%= h.escapeHtml(a.value || '') %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div class="card no-print">
+  <div class="card-header"><h3><%- icon('edit') %> یادداشت مدیریتی روی این تحلیل</h3></div>
+  <div class="card-body">
+    <form method="post" action="/assessment/results/<%= r.id %>/note" data-guard>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-row">
+        <div class="col-6"><div class="form-group"><label class="field-label">تناسب با مشاغل (یادداشت منابع انسانی)</label><textarea name="fit_notes" rows="3"><%= h.escapeHtml(r.fit_notes || '') %></textarea></div></div>
+        <div class="col-6"><div class="form-group"><label class="field-label">ملاحظات ریسک / نکات احتیاطی</label><textarea name="risk_notes" rows="3"><%= h.escapeHtml(r.risk_notes || '') %></textarea></div></div>
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit"><%- icon('save', '', 15) %> ذخیره یادداشت</button>
+    </form>
+  </div>
+</div>

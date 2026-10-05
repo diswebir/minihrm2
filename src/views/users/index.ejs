@@ -1,0 +1,106 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('users') %> کاربران سامانه</h1>
+    <p class="muted">مجموع <%= h.pnum(meta.total) %> کاربر — نقش هر کاربر، سطح دسترسی و منوی او را تعیین می‌کند.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/roles"><%- icon('shield', '', 16) %> نقش‌ها و دسترسی‌ها</a>
+    <a class="btn btn-primary" href="/users/new"><%- icon('user-plus', '', 16) %> افزودن کاربر</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="get" action="/users" class="filter-bar">
+      <input type="search" name="q" value="<%= h.escapeHtml(query.q || '') %>" placeholder="نام، نام کاربری یا موبایل">
+      <select name="role">
+        <option value="">همه نقش‌ها</option>
+        <% roles.forEach(function (r) { %>
+          <option value="<%= r.id %>" <%= String(query.role) === String(r.id) ? 'selected' : '' %>><%= h.escapeHtml(r.name) %></option>
+        <% }); %>
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit"><%- icon('search', '', 15) %> جست‌وجو</button>
+      <a class="btn btn-sm" href="/users">پاک کردن</a>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>کاربر</th><th>نقش</th><th>تماس</th><th>کد پرسنلی</th><th>وضعیت</th><th>نشست فعال</th><th>آخرین ورود</th><th class="ta-center">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% list.forEach(function (u) { %>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <span class="avatar sm" style="background:<%= h.colorFromString(u.full_name || u.username) %>"><%= h.escapeHtml(h.initials(u.full_name || u.username)) %></span>
+                  <div>
+                    <div class="cell-main"><a class="link" href="/users/<%= u.id %>/edit"><%= h.escapeHtml(u.full_name || '—') %></a></div>
+                    <div class="cell-sub" dir="ltr"><%= h.escapeHtml(u.username) %></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge info"><%= h.escapeHtml(u.role_name || 'بدون نقش') %></span>
+                <% if (u.is_superadmin) { %><span class="badge purple">مدیر سامانه</span><% } %>
+              </td>
+              <td class="small">
+                <div dir="ltr"><%= h.pnum(u.mobile || '—') %></div>
+                <div dir="ltr" class="muted"><%= h.escapeHtml(u.email || '') %></div>
+              </td>
+              <td dir="ltr"><%= h.escapeHtml(u.personnel_code || '—') %></td>
+              <td><span class="badge <%= u.status === 'active' ? 'success' : 'muted' %>" id="ustat-<%= u.id %>"><%= h.statusLabel(u.status) %></span></td>
+              <td class="num"><%= h.pnum(u.active_sessions || 0) %></td>
+              <td class="nowrap small"><%= u.last_login_at ? j.formatJalaaliDateTime(u.last_login_at) : '—' %></td>
+              <td class="ta-center">
+                <div class="row-actions">
+                  <a class="btn btn-icon btn-sm" href="/users/<%= u.id %>/edit" title="ویرایش"><%- icon('edit', '', 15) %></a>
+                  <button class="btn btn-icon btn-sm" type="button" data-reset="<%= u.id %>" data-username="<%= h.escapeHtml(u.username) %>" title="بازنشانی گذرواژه"><%- icon('key', '', 15) %></button>
+                  <button class="btn btn-icon btn-sm" type="button" data-toggle-user="<%= u.id %>" title="فعال/غیرفعال"><%- icon('toggle', '', 15) %></button>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (!list.length) { %><tr><td colspan="8" class="muted center">کاربری با این شرایط یافت نشد.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (meta.pages > 1) { %>
+      <div class="pagination">
+        <% for (var p = 1; p <= meta.pages; p++) { %>
+          <a class="<%= p === meta.page ? 'active' : '' %>" href="/users?page=<%= p %><%= query.q ? '&q=' + encodeURIComponent(query.q) : '' %>"><%= h.pnum(p) %></a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-toggle-user]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    try {
+      var res = await HRM.post('/users/' + btn.dataset.toggleUser + '/toggle', {});
+      HRM.toast('success', res.message);
+      setTimeout(function () { location.reload(); }, 500);
+    } catch (e) { HRM.toast('danger', e.message); }
+  });
+});
+
+document.querySelectorAll('[data-reset]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    if (!HRM.ask('گذرواژه کاربر «' + btn.dataset.username + '» بازنشانی شود؟ نشست‌های فعال او بسته می‌شود.')) return;
+    try {
+      var res = await HRM.post('/users/' + btn.dataset.reset + '/reset-password', {});
+      HRM.toast('success', 'گذرواژه موقت: ' + res.password, 20000);
+      window.prompt('گذرواژه موقت ساخته شد؛ آن را به کاربر اطلاع دهید:', res.password);
+    } catch (e) { HRM.toast('danger', e.message); }
+  });
+});
+</script>

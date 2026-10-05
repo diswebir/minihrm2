@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="مینی HRM">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1e40af"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <circle cx="32" cy="24" r="8" fill="#ffffff"/>
+  <path d="M17 51c0-8.3 6.7-14 15-14s15 5.7 15 14z" fill="#ffffff" opacity=".95"/>
+  <path d="M40 15c4.4 0 8 3.4 8 7.6 0 2.6-1.4 4.9-3.6 6.2 2.6 1.1 4.6 3.1 5.6 5.7" fill="none" stroke="#bfdbfe" stroke-width="3" stroke-linecap="round"/>
+</svg>

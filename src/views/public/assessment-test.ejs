@@ -1,0 +1,117 @@
+<%- include('partials/head', { pageTitle: 'آزمون شخصیت‌شناسی', subtitle: 'پاسخ‌دهی به سؤالات', company: company, backUrl: null }) %>
+
+<%
+  var payload = questions.map(function (q) {
+    return { id: q.id, number: q.number, text: q.question_text, a: q.option_a, b: q.option_b, help: q.help_text || '' };
+  });
+%>
+
+<div class="public-card" style="max-width:680px;margin:0 auto">
+  <div class="public-head">
+    <div style="flex:1">
+      <div style="font-weight:700" id="qCounter">سؤال ۱ از <%= h.pnum(questions.length) %></div>
+      <div class="muted small">گزینه‌ای را انتخاب کنید که بیشتر شبیه شماست.</div>
+    </div>
+    <span class="badge warning" id="timerBox"><%= h.pnum(duration) %>:۰۰</span>
+  </div>
+
+  <div class="public-body-inner">
+    <div class="progress" style="margin-bottom:1rem"><span id="progBar" style="width:0%"></span></div>
+
+    <div id="qBox">
+      <h2 style="font-size:1.05rem; line-height:1.9; margin-bottom:1rem" id="qText"></h2>
+      <label class="choice" id="choiceA"><input type="radio" name="ans" value="A" style="margin-left:.5rem"><span id="optA"></span></label>
+      <label class="choice" id="choiceB"><input type="radio" name="ans" value="B" style="margin-left:.5rem"><span id="optB"></span></label>
+      <div class="muted small" id="qHelp"></div>
+    </div>
+
+    <div class="btn-group mt-3" style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn" type="button" id="prevBtn"><%- icon('arrow-right', '', 16) %> سؤال قبل</button>
+      <button class="btn btn-primary" type="button" id="nextBtn">سؤال بعد <%- icon('arrow-left', '', 16) %></button>
+      <button class="btn btn-success" type="button" id="finishBtn"><%- icon('check', '', 16) %> پایان و ثبت آزمون</button>
+    </div>
+    <div class="muted small mt-1">میان‌برهای صفحه‌کلید: <b dir="ltr">1/A</b> گزینه الف، <b dir="ltr">2/B</b> گزینه ب، <b dir="ltr">←</b> و <b dir="ltr">→</b> جابه‌جایی بین سؤالات.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var QUESTIONS = <%- JSON.stringify(payload) %>;
+  var ANSWERS = <%- JSON.stringify(answered || {}) %>;
+  var TOKEN = <%- JSON.stringify(assignment.token) %>;
+  var idx = 0;
+  var total = QUESTIONS.length;
+  var sending = false;
+
+  function render() {
+    var q = QUESTIONS[idx];
+    document.getElementById('qCounter').textContent = 'سؤال ' + HRM.fa(idx + 1) + ' از ' + HRM.fa(total);
+    document.getElementById('qText').textContent = q.text;
+    document.getElementById('optA').textContent = q.a || '—';
+    document.getElementById('optB').textContent = q.b || '—';
+    document.getElementById('qHelp').textContent = q.help || '';
+    var chosen = ANSWERS[q.id];
+    document.getElementById('choiceA').classList.toggle('selected', chosen === 'A');
+    document.getElementById('choiceB').classList.toggle('selected', chosen === 'B');
+    document.querySelectorAll('#qBox input[type=radio]').forEach(function (r) { r.checked = (r.value === chosen); });
+    var answeredCount = Object.keys(ANSWERS).length;
+    document.getElementById('progBar').style.width = Math.round(answeredCount / total * 100) + '%';
+    document.getElementById('prevBtn').disabled = idx === 0;
+    document.getElementById('nextBtn').disabled = idx === total - 1;
+  }
+
+  async function submit(choice) {
+    var q = QUESTIONS[idx];
+    ANSWERS[q.id] = choice;
+    render();
+    try {
+      await HRM.post('/apply/assessment/' + TOKEN + '/answer', { question_id: q.id, choice: choice });
+    } catch (e) { HRM.toast('danger', e.message); }
+  }
+
+  document.getElementById('choiceA').addEventListener('click', function () { submit('A'); });
+  document.getElementById('choiceB').addEventListener('click', function () { submit('B'); });
+  document.getElementById('prevBtn').addEventListener('click', function () { if (idx > 0) { idx -= 1; render(); } });
+  document.getElementById('nextBtn').addEventListener('click', function () { if (idx < total - 1) { idx += 1; render(); } });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '1' || e.key.toLowerCase() === 'a') submit('A');
+    else if (e.key === '2' || e.key.toLowerCase() === 'b') submit('B');
+    else if (e.key === 'ArrowLeft') { if (idx < total - 1) { idx += 1; render(); } }
+    else if (e.key === 'ArrowRight') { if (idx > 0) { idx -= 1; render(); } }
+  });
+
+  document.getElementById('finishBtn').addEventListener('click', async function () {
+    if (sending) return;
+    var answered = Object.keys(ANSWERS).length;
+    if (answered < total) {
+      if (!HRM.ask('شما به ' + HRM.fa(answered) + ' سؤال از ' + HRM.fa(total) + ' پاسخ داده‌اید. اگر الان ثبت کنید، پاسخ‌های نداده نادیده گرفته می‌شوند. ادامه می‌دهید؟')) {
+        var firstEmpty = QUESTIONS.findIndex(function (q) { return !ANSWERS[q.id]; });
+        if (firstEmpty >= 0) { idx = firstEmpty; render(); }
+        return;
+      }
+    }
+    sending = true;
+    this.disabled = true;
+    try {
+      var res = await HRM.post('/apply/assessment/' + TOKEN + '/finish', {});
+      window.location = res.redirect || ('/apply/assessment/' + TOKEN + '/thanks');
+    } catch (e) { HRM.toast('danger', e.message); sending = false; this.disabled = false; }
+  });
+
+  // زمان‌سنج
+  var seconds = (Number(<%- JSON.stringify(duration) %>) || 20) * 60;
+  var timerBox = document.getElementById('timerBox');
+  setInterval(function () {
+    if (seconds <= 0) return;
+    seconds -= 1;
+    var m = Math.floor(seconds / 60), s = seconds % 60;
+    timerBox.textContent = HRM.fa(m) + ':' + HRM.fa(String(s).padStart(2, '0'));
+    if (seconds <= 60) timerBox.classList.add('danger');
+  }, 1000);
+
+  render();
+})();
+</script>
+
+<%- include('partials/foot', { company: company }) %>

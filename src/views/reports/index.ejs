@@ -1,0 +1,80 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('chart') %> گزارش‌ها و تحلیل</h1>
+    <p class="muted">نمای کلی سازمان، تحلیل نیروی انسانی، جذب، حقوق و رفاهیات — همه گزارش‌ها قابل چاپ و خروجی گرفتن هستند.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/reports/hr"><%- icon('users', '', 16) %> گزارش منابع انسانی</a>
+    <a class="btn" href="/reports/recruitment"><%- icon('user-plus', '', 16) %> گزارش جذب</a>
+    <a class="btn" href="/reports/payroll"><%- icon('wallet', '', 16) %> گزارش حقوق</a>
+    <a class="btn" href="/reports/welfare"><%- icon('heart', '', 16) %> گزارش رفاهیات</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('building') %> پراکندگی کارکنان بر اساس واحد سازمانی</h3></div>
+  <div class="card-body">
+    <div class="bars">
+      <%
+        var maxDept = Math.max.apply(null, (byDept || []).map(function (d) { return Number(d.c) || 0; }).concat([1]));
+      %>
+      <% (byDept || []).forEach(function (d) { %>
+        <div class="bar-row">
+          <span class="bar-label"><%= h.escapeHtml(d.name || '—') %></span>
+          <span class="bar-track"><span class="bar-fill bg-primary" style="width:<%= Math.round((Number(d.c) || 0) / maxDept * 100) %>%"></span></span>
+          <span class="bar-value"><%= h.pnum(d.c) %></span>
+        </div>
+      <% }); %>
+      <% if (!byDept || !byDept.length) { %><p class="muted center">داده‌ای موجود نیست.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('pie-chart') %> وضعیت همکاری کارکنان</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>وضعیت</th><th>نفر</th></tr></thead>
+        <tbody>
+          <% (byStatus || []).forEach(function (s) { %>
+            <tr><td><%- h.statusLabel(s.status) %></td><td class="num"><%= h.pnum(s.c) %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('file-signature') %> نوع همکاری</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>نوع</th><th>نفر</th></tr></thead>
+        <tbody>
+          <% (byType || []).forEach(function (s) { %>
+            <tr><td><%= h.escapeHtml(s.t || 'نامشخص') %></td><td class="num"><%= h.pnum(s.c) %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('trending-up') %> روند حقوق و دستمزد (دوره‌های اخیر)</h3></div>
+  <div class="card-body">
+    <div class="bars">
+      <%
+        var maxNet = Math.max.apply(null, (payrollTrend || []).map(function (p) { return Number(p.total_net) || 0; }).concat([1]));
+      %>
+      <% (payrollTrend || []).slice().reverse().forEach(function (p) { %>
+        <div class="bar-row">
+          <span class="bar-label"><%= h.escapeHtml(p.title || '') %></span>
+          <span class="bar-track"><span class="bar-fill bg-success" style="width:<%= Math.round((Number(p.total_net) || 0) / maxNet * 100) %>%"></span></span>
+          <span class="bar-value"><%= h.money(p.total_net, { suffix: false }) %></span>
+        </div>
+      <% }); %>
+      <% if (!payrollTrend || !payrollTrend.length) { %><p class="muted center">هنوز دوره حقوقی محاسبه نشده است.</p><% } %>
+    </div>
+  </div>
+</div>

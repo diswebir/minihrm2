@@ -1,0 +1,9 @@
+  </main>
+  <footer class="public-footer">
+    <div><%= h.escapeHtml((company && company.name) || '') %><% if (company && company.phone) { %> — <span dir="ltr"><%= h.pnum(company.phone) %></span><% } %></div>
+    <div class="mt-1">این سامانه برای ثبت درخواست استخدام و آزمون‌های ارزیابی استفاده می‌شود. اطلاعات شما محرمانه نگهداری می‌گردد.</div>
+  </footer>
+  <script src="/js/app.js"></script>
+  <% if (typeof inlineJs !== 'undefined' && inlineJs) { %><script><%- inlineJs %></script><% } %>
+</body>
+</html>

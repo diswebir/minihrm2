@@ -1,0 +1,78 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('calendar') %> تقویم سازمانی</h1>
+    <p class="muted">نمای ماهانه شمسی رویدادهای سازمان — امروز: <%= todayLabel %></p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/calendar?y=<%= prev.y %>&m=<%= prev.m %>"><%- icon('chevron-right', '', 16) %> ماه قبل</a>
+    <a class="btn" href="/calendar"><%- icon('target', '', 16) %> ماه جاری</a>
+    <a class="btn" href="/calendar?y=<%= next.y %>&m=<%= next.m %>">ماه بعد <%- icon('chevron-left', '', 16) %></a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('calendar-days') %> <%= monthName %> <%= h.pnum(jy) %></h3>
+    <div class="actions">
+      <form method="get" action="/calendar" class="inline-form">
+        <select name="m" onchange="this.form.submit()">
+          <% monthNames.forEach(function (name, i) { %>
+            <option value="<%= i + 1 %>" <%= (i + 1) === jm ? 'selected' : '' %>><%= name %></option>
+          <% }); %>
+        </select>
+        <input type="text" name="y" value="<%= h.pnum(jy) %>" data-numeric style="width:5.5rem">
+        <button class="btn btn-sm" type="submit"><%- icon('search', '', 14) %> نمایش</button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table calendar-table">
+        <thead>
+          <tr><% weekStart.forEach(function (w) { %><th class="ta-center"><%= w %></th><% }); %></tr>
+        </thead>
+        <tbody>
+          <% weeks.forEach(function (week) { %>
+            <tr>
+              <% week.forEach(function (cell) { %>
+                <% if (!cell) { %>
+                  <td class="calendar-empty"></td>
+                <% } else { %>
+                  <td class="calendar-day <%= cell.isToday ? 'is-today' : '' %> <%= cell.isFriday ? 'is-holiday' : '' %>">
+                    <div class="calendar-day-no"><%= h.pnum(cell.day) %></div>
+                    <% cell.events.slice(0, 4).forEach(function (ev) { %>
+                      <% if (ev.url) { %>
+                        <a class="calendar-event bg-<%= ev.color %>" href="<%= ev.url %>" title="<%= h.escapeHtml(ev.label) %>"><%= h.escapeHtml(ev.label) %></a>
+                      <% } else { %>
+                        <span class="calendar-event bg-<%= ev.color %>" title="<%= h.escapeHtml(ev.label) %>"><%= h.escapeHtml(ev.label) %></span>
+                      <% } %>
+                    <% }); %>
+                    <% if (cell.events.length > 4) { %>
+                      <span class="muted small">و <%= h.pnum(cell.events.length - 4) %> رویداد دیگر</span>
+                    <% } %>
+                  </td>
+                <% } %>
+              <% }); %>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('info') %> راهنمای رنگ‌ها</h3></div>
+  <div class="card-body">
+    <div class="legend">
+      <% legend.forEach(function (l) { %>
+        <% if (l.url) { %>
+          <a class="legend-item" href="<%= l.url %>"><span class="legend-dot bg-<%= l.color %>"></span><%= l.label %></a>
+        <% } else { %>
+          <span class="legend-item"><span class="legend-dot bg-<%= l.color %>"></span><%= l.label %></span>
+        <% } %>
+      <% }); %>
+      <% if (!legend.length) { %><p class="muted">برای مشاهده رویدادها، دسترسی ماژول‌های مربوطه لازم است.</p><% } %>
+    </div>
+  </div>
+</div>

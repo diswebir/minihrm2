@@ -1,0 +1,211 @@
+<%
+  var stColor = { new: 'muted', screening: 'info', interview: 'warning', technical: 'primary', offer: 'purple', hired: 'success', rejected: 'danger' };
+%>
+<div class="page-head no-print">
+  <div>
+    <h1><%- icon('user') %> <%= h.escapeHtml(app.full_name) %></h1>
+    <p class="muted">
+      کد پرونده: <span dir="ltr"><%= h.escapeHtml(app.code || '—') %></span>
+      — موقعیت: <%= h.escapeHtml(jobTitle || 'مشخص نشده') %>
+      — وضعیت: <%- h.statusLabel(app.status) %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/recruitment/applications"><%- icon('list', '', 16) %> فهرست داوطلبان</a>
+    <% if (app.mobile) { %>
+      <a class="btn" href="tel:<%= h.escapeHtml(app.mobile) %>"><%- icon('phone', '', 16) %> تماس</a>
+    <% } %>
+    <% if (canHire) { %>
+      <form method="post" action="/recruitment/applications/<%= app.id %>/hire" style="display:inline" data-confirm="این داوطلب استخدام شود؟ پرونده کارمند و فرآیند بدو ورود ایجاد می‌شود.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-success" type="submit"><%- icon('user-check', '', 16) %> استخدام و ایجاد پرونده کارمند</button>
+      </form>
+    <% } %>
+    <% if (app.status !== 'hired' && !app.hired_employee_id) { %>
+      <form method="post" action="/recruitment/applications/<%= app.id %>/invite-assessment" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn" type="submit"><%- icon('brain', '', 16) %> ارسال آزمون شخصیت‌شناسی</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('user') %> مشخصات داوطلب</h3></div>
+      <div class="card-body">
+        <div class="dl">
+          <div class="item"><span class="label">نام و نام خانوادگی</span><span class="value"><%= h.escapeHtml(app.full_name) %></span></div>
+          <div class="item"><span class="label">کد ملی</span><span class="value" dir="ltr"><%= h.pnum(app.national_id || '—') %></span></div>
+          <div class="item"><span class="label">موبایل</span><span class="value" dir="ltr"><%= h.pnum(app.mobile || '') %></span></div>
+          <div class="item"><span class="label">ایمیل</span><span class="value" dir="ltr"><%= h.escapeHtml(app.email || '—') %></span></div>
+          <div class="item"><span class="label">شهر</span><span class="value"><%= h.escapeHtml(app.city || '—') %></span></div>
+          <div class="item"><span class="label">تاریخ تولد</span><span class="value"><%= app.birth_date ? j.formatJalaali(app.birth_date) : '—' %></span></div>
+          <div class="item"><span class="label">جنسیت</span><span class="value"><%= h.escapeHtml(app.gender || '—') %></span></div>
+          <div class="item"><span class="label">وضعیت تأهل</span><span class="value"><%= h.escapeHtml(app.marital_status || '—') %></span></div>
+          <div class="item"><span class="label">تحصیلات</span><span class="value"><%= h.escapeHtml(app.education_level || '—') %> <%= h.escapeHtml(app.field_of_study || '') %></span></div>
+          <div class="item"><span class="label">منبع آشنایی</span><span class="value"><%= h.escapeHtml(app.source || '—') %></span></div>
+          <div class="item"><span class="label">تاریخ ثبت</span><span class="value"><%= j.formatJalaaliDateTime(app.created_at) %></span></div>
+          <div class="item"><span class="label">پیشرفت فرم</span><span class="value"><%= h.pnum(app.form_progress || 0) %>٪</span></div>
+        </div>
+        <% if (app.rejection_reason) { %>
+          <div class="alert alert-danger mt-2"><%- icon('x') %><div><b>علت رد:</b> <%= h.escapeHtml(app.rejection_reason) %></div></div>
+        <% } %>
+      </div>
+    </div>
+
+    <% Object.keys(grouped || {}).forEach(function (title) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('file-text') %> <%= h.escapeHtml(title) %></h3></div>
+        <div class="card-body">
+          <div class="dl">
+            <% grouped[title].forEach(function (a) { %>
+              <div class="item">
+                <span class="label"><%= h.escapeHtml(a.label) %><% if (a.row_index) { %> <span class="badge muted">ردیف <%= h.pnum(a.row_index + 1) %></span><% } %></span>
+                <span class="value">
+                  <% if (a.file) { %><a class="link" href="/files/<%= h.escapeHtml(a.file) %>" target="_blank">مشاهده فایل</a>
+                  <% } else { %><%= h.escapeHtml(a.value || '—') %><% } %>
+                </span>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+
+    <% if (attachments && attachments.length) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('paperclip') %> پیوست‌ها</h3></div>
+        <div class="card-body">
+          <% attachments.forEach(function (f) { %>
+            <div class="doc-item">
+              <%- icon('file', '', 16) %>
+              <a class="link" href="/files/<%= h.escapeHtml(f.file) %>" target="_blank"><%= h.escapeHtml(f.title || f.file) %></a>
+              <span class="muted small"><%= h.formatBytes(f.size) %></span>
+              <a class="btn btn-icon btn-sm" href="/recruitment/applications/<%= app.id %>/attachments/<%= f.id %>/delete" data-confirm="این پیوست حذف شود؟"><%- icon('trash', '', 15) %></a>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <div>
+    <!-- کارت تحلیل شخصیتی (محرمانه) -->
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('brain') %> تحلیل شخصیت‌شناسی</h3>
+        <div class="actions"><span class="badge badge-confidential">محرمانه — منابع انسانی</span></div>
+      </div>
+      <div class="card-body">
+        <% if (mbtiHtml) { %>
+          <%- mbtiHtml %>
+        <% } else if (resultLocked) { %>
+          <div class="confidential-banner"><%- icon('lock') %><div>نتیجه آزمون تکمیل شده است، اما دسترسی به تحلیل آن برای نقش شما مجاز نیست.</div></div>
+        <% } else { %>
+          <div class="empty-state" style="padding:1.2rem">
+            <%- icon('brain', '', 38) %>
+            <p class="muted">آزمون شخصیت‌شناسی این داوطلب تکمیل نشده است.</p>
+            <p class="muted small">این تحلیل هرگز به داوطلب نمایش داده نمی‌شود و فقط در پرونده استخدامی برای منابع انسانی و مدیریت قابل مشاهده است.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- نظرها -->
+    <div class="card">
+      <div class="card-header"><h3><%- icon('message') %> نظرها و ارزیابی‌ها</h3></div>
+      <div class="card-body">
+        <form method="post" action="/recruitment/applications/<%= app.id %>/note" data-guard>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="form-row">
+            <div class="col-6"><div class="form-group"><label class="field-label">نوع</label>
+              <select name="type">
+                <option value="hr">ارزیابی منابع انسانی</option>
+                <option value="interview">نظر مصاحبه‌کننده</option>
+                <option value="management">نظر مدیریت</option>
+                <option value="note">یادداشت</option>
+              </select></div></div>
+            <div class="col-6"><div class="form-group"><label class="field-label">امتیاز (اختیاری)</label>
+              <input type="text" name="score" data-numeric placeholder="۰ تا ۱۰۰" value="<%= app.score || '' %>"></div></div>
+            <div class="col-12"><div class="form-group"><label class="field-label">متن نظر</label>
+              <textarea name="content" rows="3" placeholder="نتیجه مصاحبه، نقاط قوت، ابهامات…" required></textarea></div></div>
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit"><%- icon('save', '', 15) %> ثبت نظر</button>
+        </form>
+
+        <div class="mt-3">
+          <% if (!notes.length) { %><p class="muted small center">نظری ثبت نشده است.</p><% } %>
+          <% notes.forEach(function (n) { %>
+            <div class="timeline-item">
+              <div class="title">
+                <span class="badge info"><%= h.escapeHtml(n.type === 'management' ? 'مدیریت' : n.type === 'interview' ? 'مصاحبه' : n.type === 'hr' ? 'منابع انسانی' : 'یادداشت') %></span>
+                <%= h.escapeHtml(n.author_name || '') %>
+                <% if (n.score !== null && n.score !== undefined) { %><span class="badge muted">امتیاز <%= h.pnum(n.score) %></span><% } %>
+              </div>
+              <div class="time"><%= j.formatJalaaliDateTime(n.created_at) %></div>
+              <div class="small"><%= h.escapeHtml(n.content || '') %></div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+
+    <!-- تصمیم -->
+    <% if (app.status !== 'hired') { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('gavel') %> تصمیم نهایی</h3></div>
+        <div class="card-body">
+          <form method="post" action="/recruitment/applications/<%= app.id %>/decision" data-guard>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-row">
+              <div class="col-12"><div class="form-group"><label class="field-label">تصمیم</label>
+                <div class="btn-group" data-choice-group>
+                  <label class="choice-card <%= app.decision === 'hire' ? 'selected' : '' %>"><input type="radio" name="decision" value="hire" <%= app.decision === 'hire' ? 'checked' : '' %>> تأیید برای استخدام</label>
+                  <label class="choice-card <%= app.decision === 'review' ? 'selected' : '' %>"><input type="radio" name="decision" value="review" <%= app.decision === 'review' ? 'checked' : '' %>> نیاز به بررسی بیشتر</label>
+                  <label class="choice-card <%= app.decision === 'reject' ? 'selected' : '' %>"><input type="radio" name="decision" value="reject" <%= app.decision === 'reject' ? 'checked' : '' %>> عدم پذیرش</label>
+                </div>
+              </div></div>
+              <div class="col-12"><div class="form-group"><label class="field-label">دلیل / توضیح</label><textarea name="reason" rows="2"><%= h.escapeHtml(app.rejection_reason || '') %></textarea></div></div>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit"><%- icon('check', '', 15) %> ثبت تصمیم</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- مصاحبه‌ها و تاریخچه -->
+    <% if (interviews && interviews.length) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('calendar') %> مصاحبه‌ها</h3></div>
+        <div class="card-body">
+          <% interviews.forEach(function (iv) { %>
+            <div class="meta-row">
+              <%- icon('calendar', '', 15) %>
+              <span><%= j.formatJalaaliDateTime(iv.scheduled_at || iv.created_at) %></span>
+              <span class="badge muted"><%= h.escapeHtml(iv.type || 'مصاحبه') %></span>
+              <%- h.statusLabel(iv.status) %>
+              <% if (iv.score) { %><span class="badge info">امتیاز <%= h.pnum(iv.score) %></span><% } %>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header"><h3><%- icon('activity') %> تاریخچه مراحل</h3></div>
+      <div class="card-body">
+        <div class="timeline">
+          <% (stageLog || []).forEach(function (l) { %>
+            <div class="timeline-item">
+              <div class="title"><%= h.escapeHtml(l.from_stage || '—') %> → <b><%= h.escapeHtml(l.to_stage) %></b></div>
+              <div class="time"><%= j.formatJalaaliDateTime(l.created_at) %></div>
+            </div>
+          <% }); %>
+          <% if (!stageLog || !stageLog.length) { %><p class="muted small">تاریخچه‌ای ثبت نشده است.</p><% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

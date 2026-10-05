@@ -1,0 +1,31 @@
+{
+  "name": "minihrm",
+  "version": "1.0.0",
+  "description": "مینی HRM — سامانه جامع منابع انسانی، جذب و استخدام (Node.js / cPanel-ready)",
+  "main": "app.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node tools/migrate.js",
+    "seed": "node tools/seed.js",
+    "reset": "node tools/reset.js",
+    "zip:cpanel": "bash tools/build-cpanel-zip.sh"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "multer": "^2.4.0",
+    "mysql2": "^3.11.5",
+    "qrcode": "^1.5.4"
+  },
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "jalaali-js": "^2.0.1",
+    "node-sql-parser": "^5.4.0"
+  }
+}

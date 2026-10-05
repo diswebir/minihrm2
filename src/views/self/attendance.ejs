@@ -1,0 +1,47 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('clock') %> کارکرد من</h1>
+    <p class="muted">۶۰ رکورد آخر تردد، جمع ساعت کارکرد، اضافه‌کاری و تأخیر</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/self/leaves"><%- icon('calendar', '', 16) %> مرخصی‌ها</a>
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card kpi-primary"><span class="kpi-icon"><%- icon('clock', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= h.minutesText ? h.minutesText(summary && summary.worked) : (summary && summary.worked ? h.pnum(Math.round(summary.worked / 60)) + ' ساعت' : '—') %></span>
+      <span class="kpi-label">جمع کارکرد</span></span></div>
+  <div class="kpi-card kpi-success"><span class="kpi-icon"><%- icon('trending-up', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= summary && summary.overtime ? h.pnum(Math.round(summary.overtime / 60)) + ' ساعت' : '—' %></span>
+      <span class="kpi-label">جمع اضافه‌کاری</span></span></div>
+  <div class="kpi-card kpi-warning"><span class="kpi-icon"><%- icon('alert', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= summary && summary.late ? h.pnum(Math.round(summary.late)) + ' دقیقه' : '—' %></span>
+      <span class="kpi-label">جمع تأخیر</span></span></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('list') %> رکوردهای تردد</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>تاریخ</th><th>ورود</th><th>خروج</th><th>کارکرد</th><th>اضافه‌کاری</th><th>تأخیر</th><th>وضعیت</th></tr></thead>
+        <tbody>
+          <% (list || []).forEach(function (r) { %>
+            <tr>
+              <td><%= r.work_date ? j.formatJalaali(r.work_date) : '—' %></td>
+              <td dir="ltr"><%= h.escapeHtml(String(r.check_in || '—').slice(0, 5)) %></td>
+              <td dir="ltr"><%= h.escapeHtml(String(r.check_out || '—').slice(0, 5)) %></td>
+              <td class="num"><%= r.worked_minutes ? h.pnum(Math.round(Number(r.worked_minutes) / 60 * 10) / 10) + ' س' : '—' %></td>
+              <td class="num"><%= r.overtime_minutes ? h.pnum(Math.round(Number(r.overtime_minutes) / 60 * 10) / 10) + ' س' : '—' %></td>
+              <td class="num"><%= r.late_minutes ? h.pnum(r.late_minutes) + ' د' : '—' %></td>
+              <td><%= h.escapeHtml(r.status || '—') %></td>
+            </tr>
+          <% }); %>
+          <% if (!list || !list.length) { %><tr><td colspan="7" class="muted center">رکورد ترددی ثبت نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('settings') %> تنظیمات سامانه</h1>
+    <p class="muted">پیکربندی عمومی، ماژول‌ها، پیامک، پشتیبان‌گیری و لاگ عملیات</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <%- include('../partials/kpi', { label: 'کارکنان', value: h.pnum(stats.employees), ico: 'users', color: 'primary', url: '/employees' }) %>
+  <%- include('../partials/kpi', { label: 'کاربران سامانه', value: h.pnum(stats.users), ico: 'user-check', color: 'info', url: '/users' }) %>
+  <%- include('../partials/kpi', { label: 'پرونده‌های استخدام', value: h.pnum(stats.applications), ico: 'user-plus', color: 'warning', url: '/recruitment/applications' }) %>
+  <%- include('../partials/kpi', { label: 'رویدادهای لاگ', value: h.pnum(stats.audit), ico: 'activity', color: 'success', url: '/settings/audit' }) %>
+  <%- include('../partials/kpi', { label: 'جدول‌های پایگاه‌داده', value: h.pnum(stats.tables), ico: 'database', color: 'info' }) %>
+</div>
+
+<div class="tile-grid">
+  <a class="tile-card" href="/settings/general"><span class="tile-icon bg-primary"><%- icon('sliders', '', 20) %></span><span class="tile-body"><span class="tile-title">تنظیمات عمومی</span><span class="tile-desc">نام سامانه، اطلاعات شرکت، قواعد جذب و حضور</span></span></a>
+  <a class="tile-card" href="/settings/modules"><span class="tile-icon bg-info"><%- icon('grid', '', 20) %></span><span class="tile-body"><span class="tile-title">مدیریت ماژول‌ها</span><span class="tile-desc">فعال/غیرفعال کردن هر ماژول به‌صورت مستقل</span></span></a>
+  <a class="tile-card" href="/settings/sms"><span class="tile-icon bg-warning"><%- icon('message', '', 20) %></span><span class="tile-body"><span class="tile-title">پیامک و اطلاع‌رسانی</span><span class="tile-desc">IPPanel، کد تأیید، الگوها و لاگ پیامک</span></span></a>
+  <a class="tile-card" href="/users"><span class="tile-icon bg-success"><%- icon('users', '', 20) %></span><span class="tile-body"><span class="tile-title">کاربران</span><span class="tile-desc">ساخت کاربر، نقش‌ها و بازنشانی گذرواژه</span></span></a>
+  <a class="tile-card" href="/roles"><span class="tile-icon bg-purple"><%- icon('shield', '', 20) %></span><span class="tile-body"><span class="tile-title">نقش‌ها و سطوح دسترسی</span><span class="tile-desc">مدیر منابع انسانی، کارشناس، کارمند، داوطلب…</span></span></a>
+  <a class="tile-card" href="/settings/reminders"><span class="tile-icon bg-warning"><%- icon('bell', '', 20) %></span><span class="tile-body"><span class="tile-title">یادآورها و سررسیدها</span><span class="tile-desc">قرارداد، مجوز، وظیفه، حقوق پرداخت‌نشده، انبار و تولدها + کرون</span></span></a>
+  <a class="tile-card" href="/settings/backup"><span class="tile-icon bg-muted"><%- icon('hard-drive', '', 20) %></span><span class="tile-body"><span class="tile-title">پشتیبان‌گیری و بازیابی</span><span class="tile-desc">تولید فایل SQL، دانلود پشتیبان، بازیابی</span></span></a>
+  <a class="tile-card" href="/settings/audit"><span class="tile-icon bg-primary"><%- icon('activity', '', 20) %></span><span class="tile-body"><span class="tile-title">لاگ عملیات</span><span class="tile-desc">ردیابی همه تغییرات کاربران</span></span></a>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('database') %> اطلاعات پایگاه‌داده</h3></div>
+  <div class="card-body">
+    <div class="dl">
+      <div class="item"><span class="label">درایور</span><span class="value" dir="ltr"><%= h.escapeHtml(dbInfo.driver) %></span></div>
+      <div class="item"><span class="label">پایگاه‌داده</span><span class="value" dir="ltr"><%= h.escapeHtml(String(dbInfo.database || '—')) %></span></div>
+      <div class="item"><span class="label">پیشوند جدول‌ها</span><span class="value" dir="ltr"><%= h.escapeHtml(dbInfo.prefix) %></span></div>
+      <div class="item"><span class="label">ماژول‌های فعال</span><span class="value"><%= h.pnum(inventory.filter(function (m) { return m.enabled; }).length) %> از <%= h.pnum(inventory.length) %></span></div>
+    </div>
+  </div>
+</div>

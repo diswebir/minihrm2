@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="csrf-token" content="<%= (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : '' %>">
+  <title><%= pageTitle %> | <%= (company && company.name) || 'فرصت‌های شغلی' %></title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+</head>
+<body class="public-body">
+  <header class="apply-header no-print">
+    <div class="brand-logo" style="width:38px;height:38px;font-size:1rem">
+      <% if (company && company.logo) { %><img src="<%= company.logo %>" alt="لوگو" style="width:100%;height:100%;object-fit:contain"> <% } else { %>م<% } %>
+    </div>
+    <div style="flex:1">
+      <div style="font-weight:700; font-size:.95rem"><%= h.escapeHtml((company && company.name) || 'فرصت‌های شغلی') %></div>
+      <div class="muted small"><%= h.escapeHtml(subtitle || 'سامانه استخدام آنلاین') %></div>
+    </div>
+    <% if (typeof backUrl !== 'undefined' && backUrl) { %>
+      <a class="btn btn-sm" href="<%= backUrl %>"><%- icon('arrow-right', '', 15) %> بازگشت</a>
+    <% } %>
+  </header>
+  <main class="public-shell">

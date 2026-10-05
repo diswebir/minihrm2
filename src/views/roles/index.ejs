@@ -1,0 +1,72 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('shield') %> نقش‌ها و سطوح دسترسی</h1>
+    <p class="muted">هر کاربر یکی از این نقش‌ها را دارد؛ دسترسی‌ها و منوی سامانه بر اساس نقش تعیین می‌شود.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('plus-circle') %> ساخت نقش جدید</h3></div>
+  <div class="card-body">
+    <form method="post" action="/roles" data-guard>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">نام نقش <span class="req">*</span></label>
+          <input type="text" name="name" required placeholder="مثلاً: سرپرست انبار"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">کلید سیستمی <span class="req">*</span></label>
+          <input type="text" name="rkey" dir="ltr" required placeholder="warehouse_supervisor">
+          <span class="field-help">حروف کوچک لاتین، عدد و زیرخط</span></div></div>
+        <div class="col-5"><div class="form-group"><label class="field-label">توضیح</label>
+          <input type="text" name="description" placeholder="کاربرد این نقش در سازمان"></div></div>
+      </div>
+      <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> ساخت نقش و تعیین دسترسی‌ها</button>
+      <span class="muted small">پس از ساخت، صفحه تعیین دسترسی‌ها به‌صورت خودکار باز می‌شود.</span>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>نقش</th><th>سطح</th><th>تعداد دسترسی</th><th>کاربران</th><th>وضعیت</th><th class="ta-center">عملیات</th></tr></thead>
+        <tbody>
+          <% roles.forEach(function (r) { %>
+            <tr>
+              <td>
+                <div class="cell-main"><a class="link" href="/roles/<%= r.id %>"><%= h.escapeHtml(r.name) %></a>
+                  <% if (r.is_locked) { %><span class="badge muted">سیستمی</span><% } %></div>
+                <div class="cell-sub"><%= h.escapeHtml(r.description || '') %></div>
+              </td>
+              <td><span class="badge info"><%= h.escapeHtml(r.scope || '—') %></span></td>
+              <td class="num"><%= h.pnum(r.perms_count || 0) %></td>
+              <td class="num"><%= h.pnum(r.users_count || 0) %></td>
+              <td><%= (r.status || 'active') === 'active' ? '<span class="badge success">فعال</span>' : '<span class="badge muted">غیرفعال</span>' %></td>
+              <td class="ta-center">
+                <a class="btn btn-sm" href="/roles/<%= r.id %>"><%- icon('sliders', '', 15) %> دسترسی‌ها</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('info') %> سطح‌های دسترسی در این سامانه</h3></div>
+  <div class="card-body">
+    <div class="grid-2" style="grid-template-columns:1fr 1fr">
+      <ul class="list-plain">
+        <li><%- icon('user-tie', '', 16) %><div style="flex:1"><b>مدیر منابع انسانی</b><div class="muted small">دسترسی کامل به ماژول‌های منابع انسانی، تأیید نهایی، تنظیمات حقوق و گزارش‌ها</div></div></li>
+        <li><%- icon('user-check', '', 16) %><div style="flex:1"><b>کارشناس منابع انسانی</b><div class="muted small">جذب، پرونده کارکنان، آموزش، مرخصی، رفاهیات و گزارش‌های عملیاتی</div></div></li>
+        <li><%- icon('briefcase', '', 16) %><div style="flex:1"><b>مدیر واحد</b><div class="muted small">داشبورد تیم، تأیید مرخصی و اضافه‌کاری، ارزیابی عملکرد</div></div></li>
+      </ul>
+      <ul class="list-plain">
+        <li><%- icon('user', '', 16) %><div style="flex:1"><b>کارمند</b><div class="muted small">سلف‌سرویس: فیش حقوقی، مرخصی، دوره‌های آموزشی، درخواست‌ها و رزرو سرویس و غذا</div></div></li>
+        <li><%- icon('shield', '', 16) %><div style="flex:1"><b>نگهبان</b><div class="muted small">دفتر مهمانان، شیفت نگهبانی، مجوز خروج کالا و ثبت وقایع</div></div></li>
+        <li><%- icon('user-plus', '', 16) %><div style="flex:1"><b>داوطلب</b><div class="muted small">فقط فرم استخدام و آزمون — بدون هیچ دسترسی به اطلاعات داخلی</div></div></li>
+      </ul>
+    </div>
+  </div>
+</div>

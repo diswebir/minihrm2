@@ -1,0 +1,58 @@
+<aside class="sidebar no-print" id="sidebar" aria-label="منوی اصلی">
+  <div class="brand">
+    <div class="brand-logo">
+      <% if (companyLogo) { %><img src="<%= companyLogo %>" alt="<%= h.escapeHtml(appName) %>"><% } else { %>م<% } %>
+    </div>
+    <div class="brand-text">
+      <strong><%= h.escapeHtml(appName) %></strong>
+      <span><%= h.escapeHtml(tagline || companyName || '') %></span>
+    </div>
+    <button class="btn btn-ghost btn-icon sidebar-toggle" type="button" data-sidebar-toggle aria-label="بستن منو" style="margin-right:auto"><%- icon('x', '', 18) %></button>
+  </div>
+
+  <nav class="nav">
+    <% navMenus.forEach(function (group) { %>
+      <div class="nav-group-title"><%= h.escapeHtml(group.name) %></div>
+      <% group.modules.forEach(function (mod) { %>
+        <% var only = mod.items.length === 1; %>
+        <% if (only) { %>
+          <a class="nav-item <%= activeMenu(mod.items[0].url, mod.items[0].exact) ? 'active' : '' %>"
+             href="<%= mod.items[0].url %>">
+            <%- icon(mod.items[0].icon || mod.icon) %>
+            <span><%= h.escapeHtml(mod.items[0].label) %></span>
+          </a>
+        <% } else { %>
+          <% var isOpen = mod.items.some(function (it) { return activeMenu(it.url, it.exact); }); %>
+          <div>
+            <button class="nav-item" type="button" data-collapse="nav-<%= mod.module %>"
+                    aria-expanded="<%= isOpen ? 'true' : 'false' %>" style="width:100%; background:none; border:none; cursor:pointer; font-family:inherit; text-align:right">
+              <%- icon(mod.icon) %>
+              <span><%= h.escapeHtml(mod.moduleName) %></span>
+              <%- icon('chevron-down', 'chev', 15) %>
+            </button>
+            <div class="nav-sub <%= isOpen ? 'open' : '' %>" id="nav-<%= mod.module %>">
+              <% mod.items.forEach(function (it) { %>
+                <a class="nav-item <%= activeMenu(it.url, it.exact) ? 'active' : '' %>" href="<%= it.url %>">
+                  <%- icon(it.icon || 'chevron-left', '', 15) %>
+                  <span><%= h.escapeHtml(it.label) %></span>
+                </a>
+              <% }); %>
+            </div>
+          </div>
+        <% } %>
+      <% }); %>
+    <% }); %>
+
+    <div class="nav-group-title">حساب من</div>
+    <a class="nav-item <%= activeMenu('/profile', false) ? 'active' : '' %>" href="/profile"><%- icon('user') %><span>پروفایل من</span></a>
+    <a class="nav-item <%= activeMenu('/self/payslips', false) ? 'active' : '' %>" href="/self/payslips"><%- icon('receipt') %><span>فیش‌های حقوقی من</span></a>
+    <a class="nav-item <%= activeMenu('/self/leaves', false) ? 'active' : '' %>" href="/self/leaves"><%- icon('calendar') %><span>مرخصی‌های من</span></a>
+    <a class="nav-item <%= activeMenu('/self/trainings', false) ? 'active' : '' %>" href="/self/trainings"><%- icon('graduation') %><span>دوره‌های آموزشی من</span></a>
+    <a class="nav-item <%= activeMenu('/requests', false) ? 'active' : '' %>" href="/requests"><%- icon('inbox') %><span>درخواست‌های من</span></a>
+    <a class="nav-item <%= activeMenu('/careers', false) ? 'active' : '' %>" href="/careers" target="_blank"><%- icon('external-link') %><span>صفحه مشاغل (عمومی)</span></a>
+    <div style="padding:1rem .7rem .3rem; font-size:.72rem; color:var(--text-muted)">
+      نسخه <%= h.pnum(appVersion) %> — <%= h.escapeHtml(companyName || '') %>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay no-print" data-sidebar-toggle></div>

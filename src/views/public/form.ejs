@@ -1,0 +1,140 @@
+<%
+  var answerMap = {};
+  (answers || []).forEach(function (a) {
+    answerMap[a.fkey] = answerMap[a.fkey] || {};
+    answerMap[a.fkey][a.row_index || 0] = a;
+  });
+  function valOf(fkey, row) {
+    var a = (answerMap[fkey] || {})[row || 0];
+    return a ? (a.value || '') : '';
+  }
+  function optionsOf(f) {
+    var o = h.jsonParse(f.options, null);
+    if (!Array.isArray(o)) return [];
+    return o.map(function (x) { return (typeof x === 'string') ? { value: x, label: x } : { value: x.value || x.label, label: x.label || x.value }; });
+  }
+  var repeatRows = 1;
+  var curStep = step || { fields: [] };
+%>
+<%- include('partials/head', { pageTitle: 'فرم استخدام', subtitle: (job ? job.title : 'تکمیل اطلاعات استخدامی'), company: company, backUrl: null }) %>
+
+<div class="public-card">
+  <div class="public-head">
+    <div style="flex:1">
+      <div style="font-weight:700"><%= h.escapeHtml(curStep.title || 'فرم استخدام') %></div>
+      <div class="muted small"><%= h.escapeHtml(curStep.description || '') %></div>
+    </div>
+    <span class="badge info">گام <%= h.pnum(stepIndex + 1) %> از <%= h.pnum(form.steps.length) %></span>
+  </div>
+
+  <div class="public-body-inner">
+    <div class="wizard-steps">
+      <% form.steps.forEach(function (s, i) { %>
+        <span class="w-step <%= i < stepIndex ? 'done' : (i === stepIndex ? 'current' : '') %>">
+          <%= h.pnum(i + 1) %>. <%= h.escapeHtml(s.title) %>
+        </span>
+      <% }); %>
+    </div>
+
+    <div class="progress" style="margin-bottom:1rem"><span style="width:<%= Number(progress) || 0 %>%"></span></div>
+
+    <% if (saved) { %>
+      <div class="alert alert-success"><%- icon('check') %><div>اطلاعات این گام ذخیره شد.</div></div>
+    <% } %>
+    <% if (typeof flash !== 'undefined' && flash && flash.error) { %>
+      <div class="alert alert-danger"><%- icon('alert') %><div><%= h.escapeHtml(flash.error) %></div></div>
+    <% } %>
+
+    <form method="post" action="/apply/<%= invite.token %>/form?_csrf=<%= csrfToken %>" id="stepForm" data-guard enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="step" value="<%= stepIndex %>">
+
+      <% if (curStep.is_repeatable) {
+           var maxSaved = 0;
+           Object.keys(answerMap).forEach(function (k) { Object.keys(answerMap[k]).forEach(function (r) { maxSaved = Math.max(maxSaved, Number(r)); }); });
+           var rows = Math.min(8, maxSaved + 2);
+           for (var r = 0; r < rows; r += 1) { %>
+        <div class="repeat-row <%= r > 0 ? 'mt-2' : '' %>" style="border:1px dashed var(--border); border-radius:10px; padding:.7rem; margin-bottom:.7rem">
+          <div class="step-title"><%- icon('layers', '', 15) %> ردیف <%= h.pnum(r + 1) %> <%= r === 0 ? '' : '(اختیاری)' %></div>
+          <% curStep.fields.forEach(function (f) { %>
+            <%- include('partials/field', { f: f, row: r, value: valOf(f.fkey, r), options: optionsOf(f), invite: invite, h: h }) %>
+          <% }); %>
+        </div>
+      <% } } else { %>
+        <% curStep.fields.forEach(function (f) { %>
+          <%- include('partials/field', { f: f, row: 0, value: valOf(f.fkey, 0), options: optionsOf(f), invite: invite, h: h }) %>
+        <% }); %>
+      <% } %>
+
+      <div class="btn-group" style="display:flex; gap:.5rem; flex-wrap:wrap">
+        <% if (stepIndex > 0) { %><a class="btn" href="/apply/<%= invite.token %>/form?step=<%= stepIndex - 1 %>"><%- icon('arrow-right', '', 16) %> گام قبل</a><% } %>
+        <button class="btn btn-primary" type="submit">
+          <%- icon('save', '', 16) %>
+          <%= stepIndex + 1 >= form.steps.length ? 'ذخیره و بازبینی نهایی' : 'ذخیره و گام بعد' %>
+        </button>
+        <button class="btn btn-ghost" type="submit" name="save_only" value="1"><%- icon('clock', '', 16) %> ذخیره و ادامه بعداً</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="public-card mt-2" style="margin-top:1rem">
+  <div class="public-body-inner">
+    <div class="meta-row" style="justify-content:space-between">
+      <span class="muted small"><%- icon('lock', '', 15) %> اطلاعات شما فقط در اختیار کارشناسان منابع انسانی قرار می‌گیرد.</span>
+      <span class="muted small">
+        <% if (app && app.code) { %>کد پیگیری شما: <b dir="ltr"><%= h.escapeHtml(app.code) %></b><% } %>
+      </span>
+    </div>
+    <% if (assessmentOn) { %>
+      <div class="alert alert-info mt-2"><%- icon('brain') %><div>پس از تکمیل فرم، یک آزمون کوتاه شخصیت‌شناسی (حدود ۱۰ دقیقه) برای شناخت بهتر سبک کاری شما برگزار می‌شود؛ پاسخ درست یا غلط ندارد.</div></div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+(function () {
+  // انتخاب کارت‌های رادیویی
+  document.querySelectorAll('[data-choice-group]').forEach(function (group) {
+    group.querySelectorAll('input[type=radio]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        group.querySelectorAll('.choice-card').forEach(function (c) { c.classList.remove('selected'); });
+        var card = radio.closest('.choice-card');
+        if (card) card.classList.add('selected');
+      });
+    });
+  });
+
+  // بارگذاری فایل با توکن دعوت
+  document.querySelectorAll('[data-public-file]').forEach(function (input) {
+    input.addEventListener('change', async function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var fd = new FormData();
+      fd.append('file', file);
+      fd.append('token', input.dataset.token);
+      var box = document.getElementById(input.dataset.target);
+      try {
+        var res = await fetch(input.dataset.uploadUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-CSRF-Token': window.__csrf || '' } });
+        var data = await res.json();
+        if (!res.ok || data.ok === false) throw new Error(data.error || 'بارگذاری فایل ناموفق بود');
+        if (box) box.value = data.file;
+        HRM.toast('success', 'فایل بارگذاری شد.');
+      } catch (e) { HRM.toast('danger', e.message); }
+    });
+  });
+
+  // هشدار ذخیره‌نشده
+  var form = document.getElementById('stepForm');
+  if (form) {
+    var dirty = false;
+    form.addEventListener('input', function () { dirty = true; });
+    window.addEventListener('beforeunload', function (e) {
+      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+    form.addEventListener('submit', function () { dirty = false; });
+  }
+})();
+</script>
+
+<%- include('partials/foot', { company: company }) %>

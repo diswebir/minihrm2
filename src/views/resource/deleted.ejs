@@ -1,0 +1,70 @@
+<% var h = locals.h; %>
+<div class="page-head">
+  <div>
+    <h1><%- icon('trash') %> سطل بازیافت — <%= h.escapeHtml(def.title) %></h1>
+    <p class="muted">رکوردهای حذف‌شده تا زمان بازیابی در این فهرست می‌مانند. می‌توانید آن‌ها را بازگردانید.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/<%= basePath %>"><%- icon('arrow-right', '', 16) %> بازگشت به فهرست</a>
+  </div>
+</div>
+
+<div class="card flush">
+  <% if (rows.length) { %>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" form="trashForm">
+    <div class="table-toolbar">
+      <div class="muted" style="flex:1"><%= h.pnum(rows.length) %> رکورد حذف‌شده</div>
+      <div class="btn-group">
+        <button class="btn btn-sm btn-primary" type="submit" form="trashForm" data-confirm="رکوردهای انتخاب‌شده بازیابی شوند؟"><%- icon('refresh', '', 15) %> بازیابی انتخاب‌شده‌ها</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:36px"><input type="checkbox" id="checkAll" aria-label="انتخاب همه"></th>
+            <% listColumns.forEach(function (col) { %><th><%= h.escapeHtml(col.label || col.field) %></th><% }); %>
+            <th>زمان حذف</th>
+            <th class="ta-center">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (row) { %>
+            <tr>
+              <td><input type="checkbox" name="ids" value="<%= row.id %>" class="row-check" form="trashForm" aria-label="انتخاب ردیف"></td>
+              <% listColumns.forEach(function (col) { %><td><%- cell(col, row) %></td><% }); %>
+              <td class="muted small"><%= row.deleted_at ? j.formatJalaaliDateTime(row.deleted_at) : '—' %></td>
+              <td class="ta-center">
+                <form method="post" action="/<%= basePath %>/<%= row.id %>/restore" style="display:inline"
+                      data-confirm="این رکورد بازیابی شود؟">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-sm" type="submit"><%- icon('refresh', '', 14) %> بازیابی</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <%- icon('trash', 'icon-xl') %>
+      <h3>سطل بازیافت خالی است</h3>
+      <p class="muted">رکوردی از این بخش حذف نشده است.</p>
+      <a class="btn btn-primary" href="/<%= basePath %>"><%- icon('arrow-right', '', 16) %> بازگشت به فهرست</a>
+    </div>
+  <% } %>
+</div>
+
+<form method="post" action="/<%= basePath %>/restore-bulk" id="trashForm" class="hidden" hidden></form>
+
+<script>
+(function () {
+  var all = document.getElementById('checkAll');
+  if (!all) return;
+  var boxes = function () { return Array.prototype.slice.call(document.querySelectorAll('#trashForm input.row-check')); };
+  all.addEventListener('change', function () {
+    boxes().forEach(function (b) { b.checked = all.checked; });
+  });
+})();
+</script>

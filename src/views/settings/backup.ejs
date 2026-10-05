@@ -1,0 +1,85 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('hard-drive') %> پشتیبان‌گیری و بازیابی</h1>
+    <p class="muted">گرفتن پشتیبان از پایگاه‌داده، دانلود فایل پشتیبان و ساخت فایل‌های SQL نصب</p>
+  </div>
+  <div class="page-actions"><a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a></div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('download') %> ساخت پشتیبان</h3></div>
+    <div class="card-body">
+      <p class="muted small">
+        در حالت MySQL، فایل پشتیبان شامل دستورهای <code dir="ltr">INSERT</code> همه جدول‌ها است و می‌توانید آن را در مرورگر دانلود کنید.
+        در حالت SQLite، فایل پایگاه‌داده به‌صورت کامل کپی می‌شود.
+      </p>
+      <form method="post" action="/settings/backup" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> گرفتن پشتیبان جدید</button>
+      </form>
+      <form method="post" action="/settings/backup/sql" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn" type="submit"><%- icon('code', '', 16) %> ساخت فایل‌های SQL (نصب مجدد)</button>
+      </form>
+      <div class="field-help mt-2">
+        مسیر تولید فایل‌های SQL: <code dir="ltr"><%= h.escapeHtml(sqlDir || '') %></code>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('upload') %> بازیابی از پشتیبان</h3></div>
+    <div class="card-body">
+      <div class="alert alert-warning"><%- icon('alert') %><div><b>هشدار:</b> بازیابی، داده‌های فعلی را با فایل پشتیبان جایگزین می‌کند. پیش از این کار از اطلاعات فعلی پشتیبان بگیرید.</div></div>
+      <form method="post" action="/settings/backup/restore?_csrf=<%= csrfToken %>" enctype="multipart/form-data" data-confirm="از بازیابی این پشتیبان اطمینان دارید؟ داده‌های فعلی جایگزین می‌شوند.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-group"><label class="field-label">فایل پشتیبان (sql یا sqlite)</label>
+          <input type="file" name="file" accept=".sql,.sqlite,.db" required></div>
+        <button class="btn btn-danger" type="submit"><%- icon('rotate-cw', '', 16) %> بازیابی</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('archive') %> پشتیبان‌های موجود</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>نام فایل</th><th>حجم</th><th>تاریخ ساخت</th><th>عملیات</th></tr></thead>
+        <tbody>
+          <% (files || []).forEach(function (f) { %>
+            <tr>
+              <td dir="ltr"><%= h.escapeHtml(f.name) %></td>
+              <td class="num"><%= h.formatBytes(f.size) %></td>
+              <td class="nowrap"><%= j.formatJalaaliDateTime(f.at) %></td>
+              <td>
+                <div class="row-actions">
+                  <a class="btn btn-icon btn-sm" href="/settings/backup/download/<%= encodeURIComponent(f.name) %>" title="دانلود"><%- icon('download', '', 15) %></a>
+                  <form method="post" action="/settings/backup/delete" style="display:inline" data-confirm="این فایل پشتیبان حذف شود؟">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="name" value="<%= h.escapeHtml(f.name) %>">
+                    <button class="btn btn-icon btn-sm" type="submit" title="حذف"><%- icon('trash', '', 15) %></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (!files || !files.length) { %><tr><td colspan="4" class="muted center">پشتیبانی ساخته نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('info') %> راهنمای پشتیبان‌گیری در cPanel</h3></div>
+  <div class="card-body">
+    <ul class="list-plain">
+      <li><%- icon('chevron-left', '', 15) %><div style="flex:1">برای پشتیبان خودکار، در cPanel بخش <b>Backup Wizard</b> یا <b>Cron Jobs</b> می‌توانید آدرس زیر را روزانه فراخوانی کنید (با توکن امنیتی):</div></li>
+      <li><%- icon('chevron-left', '', 15) %><div style="flex:1"><code dir="ltr">/settings/backup/cron?token=کلید-امنیتی</code> — کلید امنیتی را در تنظیمات عمومی تعریف کنید.</div></li>
+      <li><%- icon('chevron-left', '', 15) %><div style="flex:1">پوشه پشتیبان‌ها: <code dir="ltr">storage/backups</code> — این پوشه بیرون از ریشه عمومی وب است و مستقیماً قابل دانلود نیست.</div></li>
+    </ul>
+  </div>
+</div>

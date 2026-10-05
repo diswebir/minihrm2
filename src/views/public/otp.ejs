@@ -1,0 +1,128 @@
+<%- include('partials/head', { pageTitle: 'تأیید هویت', subtitle: (job ? job.title : 'فرم استخدام'), company: company, backUrl: '/apply' }) %>
+
+<div class="public-card" style="max-width:520px;margin:0 auto">
+  <div class="public-head">
+    <span class="avatar" style="background:var(--primary); color:#fff"><%- icon('shield-check', '', 20) %></span>
+    <div>
+      <div style="font-weight:700">تأیید هویت داوطلب</div>
+      <div class="muted small">برای ورود به فرم استخدام، هویت شما با کد پیامکی تأیید می‌شود.</div>
+    </div>
+  </div>
+  <div class="public-body-inner">
+    <% if (invite.name) { %>
+      <p class="muted small">خوش آمدید <b><%= h.escapeHtml(invite.name) %></b>؛ لطفاً اطلاعات زیر را بررسی و تأیید کنید.</p>
+    <% } %>
+
+    <div id="otpStep1">
+      <div class="form-group">
+        <label class="field-label">کد ملی <span class="req">*</span></label>
+        <input type="text" id="nationalId" dir="ltr" inputmode="numeric" maxlength="10"
+               value="<%= h.escapeHtml(invite.national_id || '') %>" placeholder="۱۰ رقم" <%= invite.national_id ? 'readonly' : '' %>>
+        <% if (invite.national_id) { %><span class="field-help">کد ملی توسط منابع انسانی ثبت شده است.</span><% } %>
+      </div>
+      <div class="form-group">
+        <label class="field-label">شماره موبایل <span class="req">*</span></label>
+        <input type="text" id="mobile" dir="ltr" inputmode="numeric" maxlength="11" value="<%= h.escapeHtml(invite.mobile || '') %>" placeholder="09123456789" <%= invite.mobile ? 'readonly' : '' %>>
+        <span class="field-help">کد تأیید به این شماره پیامک می‌شود.</span>
+      </div>
+      <button class="btn btn-primary btn-block" type="button" id="sendBtn"><%- icon('send', '', 16) %> ارسال کد تأیید</button>
+      <div id="debugBox" class="alert alert-info hidden mt-2"></div>
+    </div>
+
+    <div id="otpStep2" class="hidden">
+      <p class="muted small">کد ۵ رقمی پیامک‌شده را وارد کنید. <span id="timerBox" class="nowrap"></span></p>
+      <div class="otp-row" data-otp-length="5">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم ۱">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم ۲">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم ۳">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم ۴">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم ۵">
+      </div>
+      <input type="hidden" id="code">
+      <button class="btn btn-primary btn-block mt-2" type="button" id="verifyBtn"><%- icon('check', '', 16) %> تأیید و ورود به فرم</button>
+      <div class="btn-group mt-2">
+        <button class="btn btn-sm" type="button" id="resendBtn" disabled>ارسال مجدد کد</button>
+        <button class="btn btn-sm" type="button" id="editBtn">ویرایش شماره</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var TOKEN = <%- JSON.stringify(invite.token) %>;
+var sendBtn = document.getElementById('sendBtn');
+var verifyBtn = document.getElementById('verifyBtn');
+var resendBtn = document.getElementById('resendBtn');
+var editBtn = document.getElementById('editBtn');
+var timer = null, left = 0;
+
+function startTimer(seconds) {
+  left = seconds;
+  if (timer) clearInterval(timer);
+  resendBtn.disabled = true;
+  var box = document.getElementById('timerBox');
+  timer = setInterval(function () {
+    left -= 1;
+    box.textContent = left > 0 ? ('(ارسال مجدد تا ' + HRM.fa(left) + ' ثانیه)') : '';
+    if (left <= 0) { clearInterval(timer); resendBtn.disabled = false; }
+  }, 1000);
+}
+
+async function requestCode() {
+  sendBtn.disabled = true;
+  try {
+    var res = await HRM.post('/apply/' + TOKEN + '/otp/request', {
+      national_id: document.getElementById('nationalId').value,
+      mobile: document.getElementById('mobile').value
+    });
+    HRM.toast('success', res.message || 'کد ارسال شد');
+    document.getElementById('otpStep1').classList.add('hidden');
+    document.getElementById('otpStep2').classList.remove('hidden');
+    if (res.debugCode) {
+      var db = document.getElementById('debugBox');
+      db.classList.remove('hidden');
+      db.textContent = 'حالت آزمایشی: کد تأیید ' + res.debugCode;
+    }
+    startTimer(60);
+    var first = document.querySelector('.otp-row input');
+    if (first) first.focus();
+  } catch (e) {
+    HRM.toast('danger', e.message);
+  }
+  sendBtn.disabled = false;
+}
+
+sendBtn.addEventListener('click', requestCode);
+resendBtn.addEventListener('click', requestCode);
+editBtn.addEventListener('click', function () {
+  document.getElementById('otpStep2').classList.add('hidden');
+  document.getElementById('otpStep1').classList.remove('hidden');
+});
+
+document.querySelectorAll('.otp-row input').forEach(function (input, i, all) {
+  input.addEventListener('input', function () {
+    if (input.value && i < all.length - 1) all[i + 1].focus();
+    document.getElementById('code').value = Array.from(all).map(function (x) { return x.value; }).join('');
+    if (document.getElementById('code').value.length === all.length) verifyBtn.click();
+  });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Backspace' && !input.value && i > 0) all[i - 1].focus();
+  });
+});
+
+verifyBtn.addEventListener('click', async function () {
+  var code = document.getElementById('code').value || '';
+  if (code.length < 4) { HRM.toast('warning', 'کد تأیید را کامل وارد کنید.'); return; }
+  verifyBtn.disabled = true;
+  try {
+    var res = await HRM.post('/apply/' + TOKEN + '/otp/verify', { code: code, mobile: document.getElementById('mobile').value });
+    HRM.toast('success', res.message || 'تأیید شد');
+    window.location = res.redirect || ('/apply/' + TOKEN + '/form');
+  } catch (e) {
+    HRM.toast('danger', e.message);
+    verifyBtn.disabled = false;
+  }
+});
+</script>
+
+<%- include('partials/foot', { company: company }) %>

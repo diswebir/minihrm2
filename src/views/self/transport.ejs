@@ -1,0 +1,56 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('bus') %> سرویس ایاب و ذهاب من</h1>
+    <p class="muted">وضعیت اشتراک سرویس، مسیر و ایستگاه و ثبت درخواست سرویس جدید</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('list') %> اشتراک‌های من</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>مسیر</th><th>ایستگاه</th><th>جهت</th><th>از تاریخ</th><th>کرایه</th><th>وضعیت</th></tr></thead>
+        <tbody>
+          <% (subs || []).forEach(function (s) { %>
+            <tr>
+              <td><%= h.escapeHtml(s.route_name || '—') %></td>
+              <td><%= h.escapeHtml(s.stop_title || '—') %></td>
+              <td><%= s.direction === 'return' ? 'برگشت' : (s.direction === 'both' ? 'رفت و برگشت' : 'رفت') %></td>
+              <td><%= s.from_date ? j.formatJalaali(s.from_date) : '—' %></td>
+              <td class="num"><%= h.money(s.fee, { suffix: false }) %></td>
+              <td><span class="badge <%= s.status === 'active' ? 'success' : (s.status === 'requested' ? 'warning' : 'muted') %>"><%= s.status === 'active' ? 'فعال' : (s.status === 'requested' ? 'در انتظار تأیید' : 'غیرفعال') %></span></td>
+            </tr>
+          <% }); %>
+          <% if (!subs || !subs.length) { %><tr><td colspan="6" class="muted center">اشتراک سرویسی ثبت نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('plus-circle') %> درخواست سرویس جدید</h3></div>
+  <div class="card-body">
+    <form method="post" action="/self/transport" data-guard>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-row">
+        <div class="col-5"><div class="form-group"><label class="field-label">مسیر <span class="req">*</span></label>
+          <select name="route_id" required>
+            <option value="">— انتخاب کنید —</option>
+            <% (routes || []).forEach(function (r) { %>
+              <option value="<%= r.id %>"><%= h.escapeHtml(r.name) %><%= r.capacity ? ' — ظرفیت ' + h.pnum(r.capacity) : '' %><%= r.taken ? ' (' + h.pnum(r.taken) + ' نفر)' : '' %></option>
+            <% }); %>
+          </select></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">از تاریخ</label>
+          <input type="text" name="from_date" placeholder="1404/07/01" data-jalali></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">جهت</label>
+          <select name="direction"><option value="both">رفت و برگشت</option><option value="go">رفت</option><option value="return">برگشت</option></select></div></div>
+      </div>
+      <button class="btn btn-primary" type="submit"><%- icon('send', '', 16) %> ثبت درخواست</button>
+    </form>
+  </div>
+</div>

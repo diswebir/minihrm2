@@ -1,0 +1,109 @@
+<%
+  var s = (cfg && cfg.sms) || {};
+%>
+<div class="page-head">
+  <div>
+    <h1><%- icon('message') %> تنظیمات پیامک و اطلاع‌رسانی</h1>
+    <p class="muted">ارسال کد تأیید (OTP) و پیامک‌های استخدامی از طریق سرویس IPPanel</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="https://ippanelcom.github.io/Edge-Document/docs/" target="_blank" rel="noopener"><%- icon('external-link', '', 16) %> مستندات API</a>
+    <a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card kpi-<%= s.enabled ? 'success' : 'muted' %>">
+    <span class="kpi-icon"><%- icon('power', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= s.enabled ? 'فعال' : 'غیرفعال' %></span><span class="kpi-label">وضعیت سرویس پیامک</span></span>
+  </div>
+  <div class="kpi-card kpi-<%= (s.apiKey || (s.username && s.password)) ? 'success' : 'warning' %>">
+    <span class="kpi-icon"><%- icon('key', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= (s.apiKey || (s.username && s.password)) ? 'ثبت شده' : 'ثبت نشده' %></span><span class="kpi-label">اطلاعات احراز هویت</span></span>
+  </div>
+  <div class="kpi-card kpi-info">
+    <span class="kpi-icon"><%- icon('hash', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= h.pnum(s.otpLength || 5) %></span><span class="kpi-label">طول کد تأیید</span></span>
+  </div>
+  <div class="kpi-card kpi-warning">
+    <span class="kpi-icon"><%- icon('clock', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= h.pnum(s.otpTtlSeconds || s.otpTtl || 120) %> ثانیه</span><span class="kpi-label">اعتبار کد تأیید</span></span>
+  </div>
+</div>
+
+<% if (smsStatus && smsStatus.debugShowCode) { %>
+  <div class="alert alert-warning"><%- icon('alert') %><div><b>حالت آزمایشی:</b> در این حالت کد تأیید پیامک نمی‌شود و روی صفحه نمایش داده می‌شود. پیش از راه‌اندازی رسمی، سرویس پیامک را فعال کنید.</div></div>
+<% } %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('settings') %> پیکربندی سرویس</h3></div>
+  <div class="card-body">
+    <form method="post" action="/settings/sms" data-guard>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-row">
+        <div class="col-12">
+          <label class="check"><input type="checkbox" name="enabled" value="on" <%= s.enabled ? 'checked' : '' %>><span class="check-label">سرویس پیامک فعال باشد</span></label>
+        </div>
+        <div class="col-6"><div class="form-group"><label class="field-label">API Key (Edge)</label>
+          <input type="text" name="api_key" dir="ltr" value="<%= h.escapeHtml(s.apiKey || '') %>" placeholder="کلید وب‌سرویس IPPanel">
+          <span class="field-help">کلید API از پنل IPPanel ساخته می‌شود و منقضی نمی‌شود.</span></div></div>
+        <div class="col-6"><div class="form-group"><label class="field-label">آدرس سرویس</label>
+          <input type="text" name="base_url" dir="ltr" value="<%= h.escapeHtml(s.baseUrl || 'https://edge.ippanel.com/v1') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">نام کاربری (اختیاری — روش ورود)</label><input type="text" name="username" dir="ltr" value="<%= h.escapeHtml(s.username || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">گذرواژه (اختیاری)</label><input type="password" name="password" dir="ltr" placeholder="<%= s.password ? 'ثبت شده — برای تغییر مقدار جدید وارد کنید' : 'ثبت نشده' %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">شماره فرستنده</label><input type="text" name="sender" dir="ltr" value="<%= h.escapeHtml(s.sender || '') %>" placeholder="+983000505"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">کد الگو (Pattern)</label><input type="text" name="otp_pattern" dir="ltr" value="<%= h.escapeHtml(s.otpPattern || '') %>"><span class="field-help">در صورت استفاده از ارسال الگویی برای OTP.</span></div></div>
+        <div class="col-2"><div class="form-group"><label class="field-label">طول کد</label><input type="text" name="otp_length" data-numeric value="<%= h.pnum(s.otpLength || 5) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">اعتبار کد (ثانیه)</label><input type="text" name="otp_ttl" data-numeric value="<%= h.pnum(s.otpTtlSeconds || s.otpTtl || 120) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">فاصله ارسال مجدد (ثانیه)</label><input type="text" name="resend_seconds" data-numeric value="<%= h.pnum(s.resendSeconds || 60) %>"></div></div>
+      </div>
+      <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> ذخیره تنظیمات</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('send') %> ارسال پیامک آزمایشی</h3></div>
+  <div class="card-body">
+    <div class="form-row">
+      <div class="col-4"><div class="form-group mb-0"><label class="field-label">شماره موبایل</label><input type="text" id="testMobile" dir="ltr" placeholder="09123456789"></div></div>
+      <div class="col-4"><div class="form-group mb-0" style="padding-top:1.6rem"><button class="btn btn-outline-primary" type="button" id="testBtn"><%- icon('send', '', 16) %> ارسال پیامک آزمایشی</button></div></div>
+    </div>
+    <div class="field-help mt-1">پیام آزمایشی به صورت «پیام آزمایشی سامانه منابع انسانی» ارسال می‌شود.</div>
+  </div>
+</div>
+
+<script>
+var testBtn = document.getElementById('testBtn');
+if (testBtn) testBtn.addEventListener('click', async function () {
+  var mobile = document.getElementById('testMobile').value;
+  testBtn.disabled = true;
+  try {
+    var res = await HRM.post('/settings/sms/test', { mobile: mobile });
+    HRM.toast('success', res.message || 'ارسال شد');
+  } catch (e) { HRM.toast('danger', e.message); }
+  testBtn.disabled = false;
+});
+</script>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('activity') %> آخرین پیامک‌های ارسالی</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>شماره</th><th>متن</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+        <tbody>
+          <% (logs || []).forEach(function (l) { %>
+            <tr>
+              <td dir="ltr"><%= h.pnum(l.mobile || '') %></td>
+              <td class="small"><%= h.escapeHtml(h.truncate(l.message || '', 90)) %></td>
+              <td><span class="badge <%= l.status === 'sent' ? 'success' : (l.status === 'failed' ? 'danger' : 'muted') %>"><%= h.statusLabel(l.status) %></span></td>
+              <td class="nowrap"><%= j.formatJalaaliDateTime(l.created_at) %></td>
+            </tr>
+          <% }); %>
+          <% if (!logs || !logs.length) { %><tr><td colspan="4" class="muted center">پیامکی ثبت نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

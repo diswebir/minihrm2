@@ -1,0 +1,182 @@
+<%
+  var typeNames = { text: 'متن کوتاه', textarea: 'متن بلند', number: 'عدد', money: 'مبلغ', percent: 'درصد', select: 'انتخابی (لیست)', radio: 'انتخابی (دکمه‌ای)', checkbox: 'تیک', checkbox_group: 'چندانتخابی', date: 'تاریخ شمسی', time: 'ساعت', datetime: 'تاریخ و ساعت', file: 'فایل', national_id: 'کد ملی', phone: 'موبایل', email: 'ایمیل', jalali: 'تاریخ شمسی', multi: 'چندگانه' };
+%>
+<div class="page-head">
+  <div>
+    <h1><%- icon('form') %> فرم استخدام و سؤالات</h1>
+    <p class="muted">
+      فیلدهای فرم استخدام را اینجا مدیریت کنید: افزودن/حذف فیلد، تعیین اجباری یا اختیاری بودن، ترتیب بخش‌ها و راهنمای هر فیلد.
+      مجموع فیلدها: <b><%= h.pnum(fields.length) %></b> — فیلدهای اجباری: <b><%= h.pnum(requiredCount) %></b>
+    </p>
+  </div>
+  <div class="page-actions">
+    <% if (templates.length > 1) { %>
+      <div class="input-group">
+        <select onchange="location.href='/recruitment/forms?template=' + this.value">
+          <% templates.forEach(function (t) { %>
+            <option value="<%= t.id %>" <%= Number(t.id) === Number(tplId) ? 'selected' : '' %>><%= h.escapeHtml(t.name) %></option>
+          <% }); %>
+        </select>
+      </div>
+    <% } %>
+    <a class="btn" href="/apply/<%= '' %>" target="_blank" onclick="return false" title="پیش‌نمایش فرم از طریق لینک دعوت انجام می‌شود">
+      <%- icon('eye', '', 16) %> راهنمای پیش‌نمایش
+    </a>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <%- icon('info') %>
+  <div>این فرم از فایل «فرم استخدام» شرکت ساخته شده است. هر فیلدی که «اجباری» باشد، داوطلب بدون تکمیل آن نمی‌تواند به مرحله بعد برود. سؤالات آزمون شخصیت‌شناسی در بخش
+    <a class="link" href="/assessment/questions">سؤالات MBTI</a> مدیریت می‌شود.</div>
+</div>
+
+<% sections.forEach(function (sec) { %>
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon(sec.icon || 'file-text') %> <%= h.escapeHtml(sec.title) %>
+        <span class="badge muted"><%= h.pnum(counts[sec.id] || 0) %> فیلد</span>
+        <% if (sec.is_repeatable) { %><span class="badge info">چندردیفی</span><% } %>
+      </h3>
+      <div class="actions">
+        <button class="btn btn-sm" type="button" data-collapse="sec-<%= sec.id %>" aria-expanded="true"><%- icon('chevron-down', 'chev', 15) %></button>
+        <a class="btn btn-sm" href="/assessment/questions" title="سؤالات آزمون" style="display:none"></a>
+      </div>
+    </div>
+    <div class="card-body" id="sec-<%= sec.id %>">
+      <details class="mb-2">
+        <summary class="link" style="cursor:pointer; font-size:.85rem">ویرایش عنوان و توضیح این بخش</summary>
+        <form method="post" action="/recruitment/forms/sections/<%= sec.id %>" class="mt-2" data-guard>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="form-row">
+            <div class="col-4"><div class="form-group"><label class="field-label">عنوان بخش</label><input type="text" name="title" value="<%= h.escapeHtml(sec.title) %>"></div></div>
+            <div class="col-3"><div class="form-group"><label class="field-label">آیکون</label><input type="text" name="icon" value="<%= h.escapeHtml(sec.icon || '') %>" dir="ltr"></div></div>
+            <div class="col-5"><div class="form-group"><label class="field-label">توضیح</label><input type="text" name="description" value="<%= h.escapeHtml(sec.description || '') %>"></div></div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary btn-sm" type="submit"><%- icon('save', '', 15) %> ذخیره بخش</button>
+          </div>
+        </form>
+        <form method="post" action="/recruitment/forms/sections/<%= sec.id %>/delete" class="mt-1" data-confirm="این بخش حذف شود؟ (فقط بخش‌های بدون فیلد)">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-sm btn-danger" type="submit"><%- icon('trash', '', 15) %> حذف بخش</button>
+        </form>
+      </details>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:38px">#</th>
+              <th>عنوان فیلد</th>
+              <th style="width:120px">نوع</th>
+              <th style="width:90px">وضعیت</th>
+              <th style="width:110px">اجباری؟</th>
+              <th style="width:110px">عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% fields.filter(function (f) { return Number(f.section_id) === Number(sec.id); }).forEach(function (f) { %>
+              <tr>
+                <td class="muted"><%= h.pnum(f.sort_order || '') %></td>
+                <td>
+                  <div class="cell-main"><%= h.escapeHtml(f.label) %></div>
+                  <div class="cell-sub">
+                    <code dir="ltr"><%= h.escapeHtml(f.fkey) %></code>
+                    <% if (f.help_text) { %> — <%= h.escapeHtml(f.help_text) %><% } %>
+                    <% if (f.depends_on) { %><span class="badge muted">وابسته به <%= h.escapeHtml(f.depends_on) %></span><% } %>
+                    <% if (f.is_system) { %><span class="badge info">سیستمی</span><% } %>
+                  </div>
+                </td>
+                <td><%= h.escapeHtml(typeNames[f.type] || f.type) %></td>
+                <td><%= f.is_enabled ? '<span class="badge success">فعال</span>' : '<span class="badge muted">غیرفعال</span>' %></td>
+                <td>
+                  <form method="post" action="/recruitment/forms/fields/<%= f.id %>/toggle-required" style="display:inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-sm <%= f.is_required ? 'btn-primary' : 'btn-ghost' %>" type="submit">
+                      <% if (f.is_required) { %><%- icon('check', '', 14) %> اجباری <% } else { %>اختیاری<% } %>
+                    </button>
+                  </form>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn btn-icon btn-sm" type="button" data-modal-open="#editField<%= f.id %>" title="ویرایش"><%- icon('edit', '', 15) %></button>
+                    <form method="post" action="/recruitment/forms/fields/<%= f.id %>/delete" style="display:inline" data-confirm="این فیلد حذف شود؟ پاسخ‌های ثبت‌شده این فیلد حذف نمی‌شوند.">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn-icon btn-sm" type="submit" title="حذف"><%- icon('trash', '', 15) %></button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <details class="mt-2">
+        <summary class="btn btn-sm btn-outline-primary" style="display:inline-flex; cursor:pointer"><%- icon('plus', '', 15) %> افزودن فیلد به این بخش</summary>
+        <form method="post" action="/recruitment/forms/fields" class="mt-2" data-guard>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="template_id" value="<%= tplId %>">
+          <input type="hidden" name="section_id" value="<%= sec.id %>">
+          <div class="form-row">
+            <div class="col-4"><div class="form-group"><label class="field-label">عنوان فیلد <span class="req">*</span></label><input type="text" name="label" required></div></div>
+            <div class="col-3"><div class="form-group"><label class="field-label">کلید فنی (انگلیسی)</label><input type="text" name="fkey" dir="ltr" placeholder="خودکار"></div></div>
+            <div class="col-3"><div class="form-group"><label class="field-label">نوع فیلد</label>
+              <select name="type"><% Object.keys(typeNames).forEach(function (k) { %><option value="<%= k %>"><%= typeNames[k] %></option><% }); %></select></div></div>
+            <div class="col-2"><div class="form-group"><label class="field-label">عرض</label>
+              <select name="width"><option value="half">نیم‌عرض</option><option value="full">تمام‌عرض</option></select></div></div>
+            <div class="col-6"><div class="form-group"><label class="field-label">گزینه‌ها (برای فیلدهای انتخابی — هر خط یک گزینه)</label><textarea name="options" rows="3" dir="ltr"></textarea></div></div>
+            <div class="col-6"><div class="form-group"><label class="field-label">متن راهنما</label><input type="text" name="help_text"><label class="check mt-1"><input type="checkbox" name="is_required" value="1"><span class="check-label">تکمیل این فیلد اجباری است</span></label></div></div>
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit"><%- icon('plus', '', 15) %> افزودن فیلد</button>
+        </form>
+      </details>
+
+      <% fields.filter(function (f) { return Number(f.section_id) === Number(sec.id); }).forEach(function (f) { %>
+        <div class="modal-backdrop hidden" id="editField<%= f.id %>">
+          <div class="modal">
+            <div class="modal-header"><h3>ویرایش فیلد «<%= h.escapeHtml(f.label) %>»</h3><button class="btn btn-ghost btn-icon" type="button" data-modal-close>✕</button></div>
+            <form method="post" action="/recruitment/forms/fields/<%= f.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="col-6"><div class="form-group"><label class="field-label">عنوان</label><input type="text" name="label" value="<%= h.escapeHtml(f.label) %>"></div></div>
+                  <div class="col-6"><div class="form-group"><label class="field-label">نوع</label>
+                    <select name="type"><% Object.keys(typeNames).forEach(function (k) { %><option value="<%= k %>" <%= f.type === k ? 'selected' : '' %>><%= typeNames[k] %></option><% }); %></select></div></div>
+                  <div class="col-6"><div class="form-group"><label class="field-label">متن راهنما</label><input type="text" name="help_text" value="<%= h.escapeHtml(f.help_text || '') %>"></div></div>
+                  <div class="col-6"><div class="form-group"><label class="field-label">متن نمونه (Placeholder)</label><input type="text" name="placeholder" value="<%= h.escapeHtml(f.placeholder || '') %>"></div></div>
+                  <div class="col-6"><div class="form-group"><label class="field-label">ترتیب</label><input type="text" name="sort_order" data-numeric value="<%= f.sort_order || '' %>"></div></div>
+                  <div class="col-6"><div class="form-group"><label class="field-label">گزینه‌ها (هر خط یک گزینه)</label><textarea name="options" rows="3" dir="ltr"><%= h.escapeHtml((h.jsonParse(f.options, []) || []).map(function (o) { return typeof o === 'string' ? o : (o.label || o.value); }).join('\n')) %></textarea></div></div>
+                  <div class="col-6"><label class="check"><input type="checkbox" name="is_required" value="1" <%= f.is_required ? 'checked' : '' %>><span class="check-label">اجباری</span></label>
+                    <label class="check"><input type="checkbox" name="is_enabled" value="1" <%= f.is_enabled ? 'checked' : '' %>><span class="check-label">فعال (نمایش در فرم)</span></label></div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary" type="submit"><%- icon('save', '', 15) %> ذخیره</button>
+                <button class="btn" type="button" data-modal-close>انصراف</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+<% }); %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('plus-circle') %> افزودن بخش جدید</h3></div>
+  <div class="card-body">
+    <form method="post" action="/recruitment/forms/sections" data-guard>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="template_id" value="<%= tplId %>">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">عنوان بخش</label><input type="text" name="title" placeholder="مثال: مهارت‌های تخصصی" required></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">آیکون</label><input type="text" name="icon" dir="ltr" placeholder="list"></div></div>
+        <div class="col-5"><div class="form-group"><label class="field-label">توضیح</label><input type="text" name="description"></div></div>
+      </div>
+      <label class="check"><input type="checkbox" name="repeatable" value="1"><span class="check-label">این بخش چندردیفی است (داوطلب می‌تواند چند مورد اضافه کند)</span></label>
+      <div class="mt-2"><button class="btn btn-primary btn-sm" type="submit"><%- icon('plus', '', 15) %> افزودن بخش</button></div>
+    </form>
+  </div>
+</div>

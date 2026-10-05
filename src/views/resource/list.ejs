@@ -1,0 +1,157 @@
+<% var h = locals.h; %>
+<div class="card flush">
+  <div class="table-toolbar">
+    <form method="get" action="/<%= basePath %>" style="display:flex;gap:.5rem;flex:1;flex-wrap:wrap;align-items:center">
+      <div class="search">
+        <%- icon('search') %>
+        <input type="search" name="q" value="<%= h.escapeHtml(query.q || '') %>" placeholder="جست‌وجو در <%= h.escapeHtml(def.title) %>…" aria-label="جست‌وجو">
+      </div>
+      <% (def.filters || []).forEach(function (f) { %>
+        <div style="min-width:150px">
+          <% if (f.type === 'date_range') { %>
+            <input type="text" data-jalali name="f_<%= f.name %>_from" value="<%= h.escapeHtml(query['f_' + f.name + '_from'] || '') %>" placeholder="<%= f.label %> از" style="font-size:.82rem">
+          <% } else if (f.type === 'lookup' || f.type === 'select') { %>
+            <select name="f_<%= f.name %>" aria-label="<%= f.label %>">
+              <option value=""><%= f.label %>: همه</option>
+              <% (lookups[f.name] || f.options || []).forEach(function (o) { %>
+                <option value="<%= o.value !== undefined ? o.value : o %>" <%= String(query['f_' + f.name] || '') === String(o.value !== undefined ? o.value : o) ? 'selected' : '' %>><%= o.label !== undefined ? o.label : o %></option>
+              <% }); %>
+            </select>
+          <% } else if (f.type === 'boolean') { %>
+            <select name="f_<%= f.name %>" aria-label="<%= f.label %>">
+              <option value=""><%= f.label %>: همه</option>
+              <option value="1" <%= String(query['f_' + f.name] || '') === '1' ? 'selected' : '' %>>بله</option>
+              <option value="0" <%= String(query['f_' + f.name] || '') === '0' ? 'selected' : '' %>>خیر</option>
+            </select>
+          <% } else { %>
+            <input type="text" name="f_<%= f.name %>" value="<%= h.escapeHtml(query['f_' + f.name] || '') %>" placeholder="<%= f.label %>" style="font-size:.82rem">
+          <% } %>
+        </div>
+      <% }); %>
+      <button class="btn btn-sm btn-primary" type="submit"><%- icon('filter', '', 15) %> اعمال</button>
+      <% if (query.q || Object.keys(query).some(function (k) { return k.indexOf('f_') === 0; })) { %>
+        <a class="btn btn-sm btn-ghost" href="/<%= basePath %>">حذف فیلترها</a>
+      <% } %>
+    </form>
+
+    <div class="btn-group">
+      <% if (canExport) { %>
+        <a class="btn btn-sm" href="/<%= basePath %>/export.csv<%= buildQuery(query) %>"><%- icon('download', '', 15) %> خروجی</a>
+      <% } %>
+      <% if (def.softDelete && trashCount) { %>
+        <a class="btn btn-sm" href="/<%= basePath %>/deleted"><%- icon('trash', '', 15) %> سطل بازیافت <span class="badge muted"><%= h.pnum(trashCount) %></span></a>
+      <% } %>
+      <% if (canCreate && def.canCreate !== false) { %>
+        <a class="btn btn-sm btn-primary" href="/<%= basePath %>/new"><%- icon('plus', '', 15) %> <%= h.escapeHtml(def.newLabel || ('افزودن ' + (def.titleSingular || def.title))) %></a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (totals) { %>
+    <div style="padding:.6rem 1rem; display:flex; gap:1.2rem; flex-wrap:wrap; background:var(--primary-50); border-bottom:1px solid var(--border); font-size:.85rem">
+      <% (def.sumFields || []).forEach(function (f) { %>
+        <div><span class="muted"><%= f.label || f.field %>: </span>
+          <b class="money"><%= h.pnum(h.formatNumber(totals[f.alias || f.field] || 0)) %></strong> <small class="muted">ریال</small></div>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <% if (canDelete) { %><th style="width:36px"><input type="checkbox" id="checkAll" aria-label="انتخاب همه"></th><% } %>
+          <% def.listColumns.forEach(function (col) { %>
+            <th>
+              <% var fname = col.field || col.name; %>
+              <% if (col.sortable === false) { %><%= col.label %><% } else { %>
+                <a href="<%= buildQuery(query, { sort: fname, dir: (String(sort) === fname && String(dir).toUpperCase() !== 'ASC') ? 'asc' : 'desc' }) %>">
+                  <%= col.label %>
+                  <% if (String(sort) === fname) { %><span class="muted"><%= String(dir).toUpperCase() === 'ASC' ? '▲' : '▼' %></span><% } %>
+                </a>
+              <% } %>
+            </th>
+          <% }); %>
+          <th style="width:120px" class="left">عملیات</th>
+        </tr>
+      </thead>
+      <tbody>
+      <% if (!rows.length) { %>
+        <tr><td colspan="<%= def.listColumns.length + (canDelete ? 2 : 1) %>">
+          <div class="empty-state">
+            <%- icon(def.icon || 'inbox', '', 52) %>
+            <h4>موردی ثبت نشده است</h4>
+            <p class="muted">هنوز رکوردی در این بخش وجود ندارد یا نتیجه‌ای برای فیلترهای انتخابی یافت نشد.</p>
+            <% if (canCreate && def.canCreate !== false) { %>
+              <a class="btn btn-primary" href="/<%= basePath %>/new"><%- icon('plus', '', 16) %> <%= h.escapeHtml(def.newLabel || ('افزودن ' + (def.titleSingular || def.title))) %></a>
+            <% } %>
+          </div>
+        </td></tr>
+      <% } %>
+      <% rows.forEach(function (row) { %>
+        <tr>
+          <% if (canDelete) { %><td><input type="checkbox" name="ids" value="<%= row.id %>" form="bulkForm" aria-label="انتخاب رکورد"></td><% } %>
+          <% def.listColumns.forEach(function (col) { %>
+            <td><%- cell(col, row) %></td>
+          <% }); %>
+          <td class="actions-cell">
+            <div class="row-actions">
+              <a class="btn btn-ghost btn-icon btn-sm" href="/<%= basePath %>/<%= row.id %>" title="مشاهده"><%- icon('eye', '', 16) %></a>
+              <% if (canCreate) { %>
+                <a class="btn btn-ghost btn-icon btn-sm" href="/<%= basePath %>/<%= row.id %>/edit" title="ویرایش"><%- icon('edit', '', 16) %></a>
+              <% } %>
+              <% if (canDelete) { %>
+                <form method="post" action="/<%= basePath %>/<%= row.id %>/delete" style="display:inline" data-confirm="آیا از حذف این رکورد اطمینان دارید؟">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-ghost btn-icon btn-sm text-danger" type="submit" title="حذف"><%- icon('trash', '', 16) %></button>
+                </form>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (canDelete && rows.length) { %>
+    <form method="post" action="/<%= basePath %>/bulk" id="bulkForm" class="hidden" style="display:none"></form>
+  <% } %>
+
+  <div class="table-footer">
+    <span class="muted">
+      نمایش <%= h.pnum(meta.from) %> تا <%= h.pnum(meta.to) %> از <%= h.pnum(meta.total) %> رکورد
+    </span>
+    <% var pages = []; for (var i = 1; i <= meta.pages; i += 1) { if (i === 1 || i === meta.pages || Math.abs(i - meta.page) <= 2) pages.push(i); } %>
+    <% if (meta.pages > 1) { %>
+      <nav class="pagination" aria-label="صفحه‌بندی">
+        <a class="<%= meta.hasPrev ? '' : 'disabled' %>" href="<%= buildQuery(query, { page: meta.page - 1 }) %>" aria-label="قبلی">‹</a>
+        <% var last = 0; pages.forEach(function (p) { if (p - last > 1) { %><span class="disabled">…</span><% } last = p; %>
+          <a class="<%= p === meta.page ? 'active' : '' %>" href="<%= buildQuery(query, { page: p }) %>"><%= h.pnum(p) %></a>
+        <% }); %>
+        <a class="<%= meta.hasNext ? '' : 'disabled' %>" href="<%= buildQuery(query, { page: meta.page + 1 }) %>" aria-label="بعدی">›</a>
+      </nav>
+    <% } %>
+    <form method="get" action="/<%= basePath %>" style="display:flex;gap:.3rem;align-items:center">
+      <% Object.entries(query).forEach(function (kv) { if (kv[0] !== 'per_page' && kv[0] !== 'page') { %>
+        <input type="hidden" name="<%= kv[0] %>" value="<%= h.escapeHtml(kv[1]) %>">
+      <% } }); %>
+      <select name="per_page" onchange="this.form.submit()" aria-label="تعداد در صفحه" style="padding:.25rem .4rem;font-size:.8rem">
+        <% perPageAllowed.forEach(function (n) { %>
+          <option value="<%= n %>" <%= Number(query.per_page) === n ? 'selected' : '' %>><%= h.pnum(n) %> در صفحه</option>
+        <% }); %>
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="hidden no-print" id="bulkBar" style="position:fixed; bottom:1.2rem; inset-inline-start:50%; transform:translateX(50%); z-index:50; background:var(--surface); border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow-lg); padding:.5rem .9rem; display:flex; gap:.6rem; align-items:center">
+  <span style="font-size:.86rem"><b id="bulkCount">۰</b> رکورد انتخاب شده</span>
+  <form method="post" action="/<%= basePath %>/bulk" onsubmit="return confirm('آیا از حذف موارد انتخاب‌شده اطمینان دارید؟')">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="action" value="delete">
+    <div id="bulkIds"></div>
+    <button class="btn btn-sm btn-danger" type="submit"><%- icon('trash', '', 15) %> حذف موارد</button>
+  </form>
+  <button class="btn btn-sm btn-ghost" type="button" onclick="document.querySelectorAll('input[name=\'ids\']').forEach(function(b){b.checked=false}); this.closest('#bulkBar').classList.add('hidden');">لغو</button>
+</div>

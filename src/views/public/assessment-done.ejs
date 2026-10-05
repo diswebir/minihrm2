@@ -1,0 +1,26 @@
+<%- include('partials/head', { pageTitle: 'آزمون تکمیل شد', subtitle: 'پایان آزمون شخصیت‌شناسی', company: company, backUrl: null }) %>
+
+<div class="public-card" style="max-width:560px;margin:0 auto">
+  <div class="public-body-inner center">
+    <div style="font-size:2.6rem"><%- icon('check-circle', 'text-success', 54) %></div>
+    <h1 style="font-size:1.1rem">آزمون شما ثبت شد</h1>
+    <p class="muted">
+      <%= h.escapeHtml(thanks || 'از وقتی که گذاشتید سپاسگزاریم. پاسخ‌های شما با موفقیت ثبت شد.') %>
+    </p>
+
+    <div class="alert alert-info" style="text-align:right">
+      <%- icon('lock') %>
+      <div>
+        <b>توجه:</b> تحلیل و نتیجه این آزمون تنها در اختیار کارشناسان منابع انسانی قرار می‌گیرد و به داوطلب نمایش داده نمی‌شود.
+        نتیجه این آزمون به‌تنهایی مبنای تصمیم استخدامی نیست.
+      </div>
+    </div>
+
+    <div class="btn-group mt-3" style="justify-content:center">
+      <a class="btn" href="/apply"><%- icon('home', '', 16) %> صفحه فرصت‌های شغلی</a>
+      <a class="btn" href="/apply/status"><%- icon('search', '', 16) %> پیگیری وضعیت پرونده</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/foot', { company: company }) %>

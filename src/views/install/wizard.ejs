@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    .install-shell { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 4rem }
+    .install-head { text-align: center; margin-bottom: 1.5rem }
+    .install-head .brand-logo { width: 62px; height: 62px; font-size: 1.6rem; margin: 0 auto .8rem; border-radius: 18px }
+    .req-list { list-style: none; padding: 0; margin: 0 }
+    .req-list li { display: flex; gap: .6rem; align-items: flex-start; padding: .5rem 0; border-bottom: 1px dashed var(--border); font-size: .88rem }
+    .req-list li:last-child { border: none }
+    .req-ok { color: var(--success) } .req-fail { color: var(--danger) }
+    .db-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem }
+    @media (max-width: 700px) { .db-fields { grid-template-columns: 1fr } }
+  </style>
+</head>
+<body>
+<div class="install-shell">
+  <div class="install-head">
+    <div class="brand-logo">م</div>
+    <h1><%= title %></h1>
+    <p class="muted">راه‌اندازی گام‌به‌گام سامانه جامع منابع انسانی — بدون نیاز به خط فرمان</p>
+  </div>
+
+  <% var steps = done ? 4 : 1; %>
+  <div class="progress-steps" style="justify-content:center">
+    <span class="ps <%= done ? 'done' : 'active' %>"><span class="n">۱</span> پیش‌نیازها</span>
+    <span class="line"></span>
+    <span class="ps <%= done ? 'done' : '' %>"><span class="n">۲</span> پایگاه‌داده و اطلاعات شرکت</span>
+    <span class="line"></span>
+    <span class="ps <%= done ? 'done' : '' %>"><span class="n">۳</span> ساخت مدیر سامانه</span>
+    <span class="line"></span>
+    <span class="ps <%= done ? 'active' : '' %>"><span class="n">۴</span> پایان</span>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%- icons.icon('alert') %><div><%= error %></div></div>
+  <% } %>
+
+  <% if (done) { %>
+    <div class="card">
+      <div class="card-body center">
+        <div style="font-size:3rem">🎉</div>
+        <h2>نصب سامانه با موفقیت انجام شد</h2>
+        <p class="muted">حالا می‌توانید با اطلاعات زیر وارد سامانه شوید.</p>
+        <% if (credentials) { %>
+          <div class="dl mt-2" style="text-align:right">
+            <div><dt>نام کاربری</dt><dd><code><%= credentials.username %></code></dd></div>
+            <div><dt>گذرواژه</dt><dd><code><%= credentials.password %></code></dd></div>
+            <div><dt>پایگاه‌داده</dt><dd><%= credentials.driver === 'mysql' ? 'MySQL — ' + credentials.database : 'حالت آزمایشی (SQLite)' %></dd></div>
+            <div><dt>جداول ساخته‌شده</dt><dd><%= h.pnum(credentials.tables) %> جدول، <%= h.pnum(credentials.statements) %> دستور</dd></div>
+            <div><dt>سطوح دسترسی</dt><dd><%= h.pnum(credentials.roles) %> نقش، <%= h.pnum(credentials.permissions) %> مجوز</dd></div>
+            <div><dt>ماژول‌ها</dt><dd><%= h.pnum(credentials.modules) %> ماژول فعال</dd></div>
+          </div>
+          <div class="alert alert-warning mt-2" style="text-align:right">
+            <%- icons.icon('alert') %>
+            <div><b>مهم:</b> این گذرواژه فقط یک‌بار نمایش داده می‌شود. آن را در جای امنی نگه دارید و پس از ورود، از بخش «پروفایل من» آن را تغییر دهید.</div>
+          </div>
+        <% } %>
+        <div class="btn-group mt-3" style="justify-content:center">
+          <a class="btn btn-primary btn-lg" href="/login">ورود به سامانه</a>
+          <a class="btn" href="/dashboard">رفتن به داشبورد</a>
+        </div>
+      </div>
+    </div>
+  <% } else { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icons.icon('check-square') %> بررسی پیش‌نیازهای هاست</h3></div>
+    <div class="card-body">
+      <ul class="req-list">
+        <% requirements.forEach(function (r) { %>
+          <li>
+            <span class="<%= r.ok ? 'req-ok' : 'req-fail' %>"><%- icons.icon(r.ok ? 'check-circle' : 'x-circle', '', 18) %></span>
+            <div style="flex:1">
+              <div><b><%= r.title %></b> <% if (r.critical) { %><span class="badge danger">الزامی</span><% } else { %><span class="badge muted">اختیاری</span><% } %></div>
+              <div class="muted small"><%= r.hint %></div>
+            </div>
+          </li>
+        <% }); %>
+      </ul>
+      <% if (!allOk) { %>
+        <div class="alert alert-danger mt-2"><%- icons.icon('alert') %><div>برخی پیش‌نیازهای الزامی برقرار نیست. تا رفع آن‌ها امکان ادامه نصب وجود ندارد.</div></div>
+      <% } else { %>
+        <div class="alert alert-success mt-2"><%- icons.icon('check-circle') %><div>همه پیش‌نیازهای الزامی برقرار است. می‌توانید ادامه دهید.</div></div>
+      <% } %>
+    </div>
+  </div>
+
+  <form method="post" action="/install" id="installForm">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="card">
+      <div class="card-header"><h3><%- icons.icon('database') %> پایگاه‌داده</h3></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="field-label">موتور پایگاه‌داده</label>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+            <label class="choice-card" style="flex:1;min-width:230px">
+              <input type="radio" name="driver" value="mysql" <%= values.driver !== 'sqlite' ? 'checked' : '' %>>
+              <span>
+                <span class="c-title">MySQL / MariaDB — پیشنهادی برای cPanel</span>
+                <span class="c-desc">در cPanel از بخش «MySQL Databases» یک پایگاه‌داده و کاربر بسازید.</span>
+              </span>
+            </label>
+            <label class="choice-card" style="flex:1;min-width:230px">
+              <input type="radio" name="driver" value="sqlite" <%= values.driver === 'sqlite' ? 'checked' : '' %>>
+              <span>
+                <span class="c-title">حالت آزمایشی (SQLite)</span>
+                <span class="c-desc">بدون نیاز به MySQL — مناسب آزمون و اجرای محلی.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div id="mysqlFields">
+          <div class="db-fields">
+            <div class="form-group">
+              <label class="field-label">میزبان (Host)</label>
+              <input type="text" name="host" value="<%= values.host %>" placeholder="localhost">
+            </div>
+            <div class="form-group">
+              <label class="field-label">پورت</label>
+              <input type="text" name="port" value="<%= values.port %>" placeholder="3306">
+            </div>
+            <div class="form-group">
+              <label class="field-label">نام پایگاه‌داده <span class="req">*</span></label>
+              <input type="text" name="database" value="<%= values.database %>" placeholder="prefix_hrm" class="<%= errors.database ? 'invalid' : '' %>">
+              <% if (errors.database) { %><span class="field-error"><%= errors.database %></span><% } %>
+            </div>
+            <div class="form-group">
+              <label class="field-label">نام کاربری <span class="req">*</span></label>
+              <input type="text" name="user" value="<%= values.user %>" placeholder="prefix_user" class="<%= errors.user ? 'invalid' : '' %>">
+            </div>
+            <div class="form-group">
+              <label class="field-label">گذرواژه پایگاه‌داده</label>
+              <input type="password" name="password" value="<%= values.password %>" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="field-label">پیشوند جدول‌ها</label>
+              <input type="text" name="prefix" value="<%= values.prefix %>" placeholder="hrm_">
+              <span class="field-hint">اگر در همین پایگاه‌داده چند سامانه دارید، پیشوند را تغییر دهید.</span>
+            </div>
+          </div>
+          <div id="dbTestResult"></div>
+          <button class="btn" type="button" id="testDbBtn"><%- icons.icon('activity', '', 16) %> آزمون اتصال</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3><%- icons.icon('building') %> اطلاعات شرکت</h3></div>
+      <div class="card-body">
+        <div class="db-fields">
+          <div class="form-group">
+            <label class="field-label">نام شرکت <span class="req">*</span></label>
+            <input type="text" name="companyName" value="<%= values.companyName %>" placeholder="شرکت دانش‌بنیان ..." required>
+          </div>
+          <div class="form-group">
+            <label class="field-label">شماره تماس</label>
+            <input type="text" name="companyPhone" value="<%= values.companyPhone %>">
+          </div>
+          <div class="form-group">
+            <label class="field-label">کد ملی / شناسه ملی شرکت</label>
+            <input type="text" name="companyNationalId" value="<%= values.companyNationalId %>">
+          </div>
+          <div class="form-group">
+            <label class="field-label">شماره ثبت</label>
+            <input type="text" name="companyRegistrationNo" value="<%= values.companyRegistrationNo || '' %>">
+          </div>
+          <div class="form-group">
+            <label class="field-label">ایمیل</label>
+            <input type="email" name="companyEmail" value="<%= values.companyEmail %>">
+          </div>
+          <div class="form-group">
+            <label class="field-label">نوع شرکت</label>
+            <label class="check"><input type="checkbox" name="knowledgeBased" value="1" <%= values.knowledgeBased ? 'checked' : '' %>><span class="check-label">دانش‌بنیان است</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="field-label">نشانی</label>
+          <textarea name="companyAddress" rows="2"><%= values.companyAddress %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3><%- icons.icon('shield') %> مدیر سامانه (سوپر ادمین)</h3></div>
+      <div class="card-body">
+        <div class="alert alert-info"><%- icons.icon('info') %><div>این کاربر دسترسی کامل به همه بخش‌ها و تنظیمات ماژول‌ها دارد. پس از ورود می‌توانید کاربران و سطوح دسترسی دیگر را بسازید.</div></div>
+        <div class="db-fields">
+          <div class="form-group">
+            <label class="field-label">نام و نام خانوادگی <span class="req">*</span></label>
+            <input type="text" name="adminName" value="<%= values.adminName %>" required class="<%= errors.adminName ? 'invalid' : '' %>">
+            <% if (errors.adminName) { %><span class="field-error"><%= errors.adminName %></span><% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label">نام کاربری <span class="req">*</span></label>
+            <input type="text" name="adminUsername" value="<%= values.adminUsername %>" required dir="ltr" class="<%= errors.adminUsername ? 'invalid' : '' %>">
+            <% if (errors.adminUsername) { %><span class="field-error"><%= errors.adminUsername %></span><% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label">شماره موبایل (برای ورود با پیامک)</label>
+            <input type="text" name="adminMobile" value="<%= values.adminMobile %>" placeholder="09123456789" dir="ltr" class="<%= errors.adminMobile ? 'invalid' : '' %>">
+            <% if (errors.adminMobile) { %><span class="field-error"><%= errors.adminMobile %></span><% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label">ایمیل</label>
+            <input type="email" name="adminEmail" value="<%= values.adminEmail %>" dir="ltr">
+          </div>
+          <div class="form-group">
+            <label class="field-label">گذرواژه <span class="req">*</span></label>
+            <input type="password" name="adminPassword" id="passwordInput" required autocomplete="new-password" class="<%= errors.adminPassword ? 'invalid' : '' %>">
+            <div class="strength-bar"><span></span></div>
+            <span class="field-hint" id="strengthLabel">حداقل ۸ کاراکتر شامل حرف و عدد</span>
+            <% if (errors.adminPassword) { %><span class="field-error"><%= errors.adminPassword %></span><% } %>
+          </div>
+          <div class="form-group">
+            <label class="field-label">تکرار گذرواژه <span class="req">*</span></label>
+            <input type="password" name="adminPassword2" required autocomplete="new-password" class="<%= errors.adminPassword2 ? 'invalid' : '' %>">
+            <% if (errors.adminPassword2) { %><span class="field-error"><%= errors.adminPassword2 %></span><% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3><%- icons.icon('message') %> پیامک آی‌پی‌پنل (اختیاری)</h3></div>
+      <div class="card-body">
+        <div class="alert alert-info"><%- icons.icon('info') %><div>
+          برای ارسال کد تأیید (OTP) به داوطلبان استخدام، اطلاعات سرویس پیامکی خود را وارد کنید.
+          در پنل آی‌پی‌پنل از مسیر <b>Developers › Access Keys</b> کلید API بسازید.
+          پس از نصب نیز می‌توانید از «تنظیمات › پیامک» این اطلاعات را وارد کنید.
+        </div></div>
+        <div class="db-fields">
+          <div class="form-group">
+            <label class="field-label">کلید API (Access Key)</label>
+            <input type="text" name="smsApiKey" value="<%= values.smsApiKey %>" dir="ltr" placeholder="xxxxxxxxxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label class="field-label">شماره فرستنده</label>
+            <input type="text" name="smsSender" value="<%= values.smsSender %>" dir="ltr" placeholder="+983000505">
+          </div>
+          <div class="form-group">
+            <label class="field-label">کد الگوی ارسال کد تأیید (Pattern)</label>
+            <input type="text" name="smsPattern" value="<%= values.smsPattern %>" dir="ltr" placeholder="xxxxx">
+          </div>
+          <div class="form-group">
+            <label class="field-label">روش جای‌گزین (نام کاربری پنل)</label>
+            <input type="text" name="smsUsername" value="<%= values.smsUsername %>" dir="ltr">
+          </div>
+          <div class="form-group">
+            <label class="field-label">گذرواژه پنل (در صورت نبود کلید API)</label>
+            <input type="password" name="smsPassword" value="" dir="ltr" autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="alert alert-warning"><%- icons.icon('alert') %>
+          <div>پس از اجرا، سامانه <b><%= h.pnum(35) %>+ جدول</b>، سطوح دسترسی پیش‌فرض (مدیر منابع انسانی، کارمند منابع انسانی، کارمند شرکت، داوطلب استخدام و ...)، فرم استخدام رسمی شرکت، آزمون MBTI و تنظیمات حقوق و دستمزد ۱۴۰۴ را می‌سازد.</div>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" id="submitBtn" <%= allOk ? '' : 'disabled' %>>
+          <%- icons.icon('rocket', '', 20) %> اجرای نصب و ساخت سامانه
+        </button>
+      </div>
+    </div>
+  </form>
+  <% } %>
+
+  <div class="center muted small mt-3">
+    مینی HRM — سامانه جامع منابع انسانی، جذب و استخدام | سازگار با هاست‌های cPanel (Node.js)
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  (function () {
+    var driverInputs = document.querySelectorAll('input[name="driver"]');
+    function syncDriver() {
+      var isMysql = document.querySelector('input[name="driver"]:checked').value === 'mysql';
+      document.getElementById('mysqlFields').style.display = isMysql ? '' : 'none';
+    }
+    driverInputs.forEach(function (i) { i.addEventListener('change', syncDriver); });
+    syncDriver();
+
+    var testBtn = document.getElementById('testDbBtn');
+    if (testBtn) testBtn.addEventListener('click', async function () {
+      var box = document.getElementById('dbTestResult');
+      box.innerHTML = '<div class="alert alert-info">در حال بررسی اتصال…</div>';
+      var form = document.getElementById('installForm');
+      var data = new FormData();
+      ['driver', 'host', 'port', 'database', 'user', 'password', 'prefix'].forEach(function (k) {
+        var el = form.querySelector('[name="' + k + '"]');
+        if (el) data.append(k, el.type === 'radio' ? (form.querySelector('[name="' + k + '"]:checked') || {}).value || '' : el.value);
+      });
+      var csrf = form.querySelector('[name="_csrf"]');
+      data.append('_csrf', csrf ? csrf.value : '');
+      try {
+        var res = await fetch('/install/test-db', { method: 'POST', body: data });
+        var json = await res.json();
+        box.innerHTML = '<div class="alert ' + (json.ok ? 'alert-success' : 'alert-danger') + '">' + json.message + '</div>';
+      } catch (e) {
+        box.innerHTML = '<div class="alert alert-danger">ارتباط با سرور برقرار نشد.</div>';
+      }
+    });
+
+    var form = document.getElementById('installForm');
+    if (form) form.addEventListener('submit', function () {
+      var btn = document.getElementById('submitBtn');
+      if (btn) { btn.disabled = true; btn.innerHTML = 'در حال ساخت پایگاه‌داده و جداول… لطفاً صبر کنید'; }
+    });
+  })();
+</script>
+</body>
+</html>

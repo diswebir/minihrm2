@@ -1,0 +1,111 @@
+<%
+  var earnings = (snap && snap.earnings) || [];
+  var deductions = (snap && snap.deductions) || [];
+  var totals = (snap && snap.totals) || {};
+  var empInfo = (snap && snap.employee) || {};
+  var periodInfo = (snap && snap.period) || {};
+  var months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  var periodLabel = (period && period.title) || (periodInfo.month ? months[periodInfo.month - 1] + ' ' + periodInfo.year : '');
+  var maxRows = Math.max(earnings.length, deductions.length);
+%>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    body { background: #f1f5f9; padding: 1rem }
+    .payslip { box-shadow: 0 2px 14px rgba(15,23,42,.08); border-radius: 10px }
+    .toolbar { max-width: 860px; margin: 0 auto .8rem; display: flex; gap: .5rem; justify-content: flex-end }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <a class="btn" href="<%= self ? '/self/payslips' : (period ? '/payroll/periods/' + period.id : '/payroll') %>">بازگشت</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()">چاپ / ذخیره PDF</button>
+  </div>
+
+  <div class="payslip">
+    <div class="payslip-head">
+      <% if (company && company.logo) { %><img src="<%= company.logo %>" alt="لوگو" style="height:46px"> <% } %>
+      <div style="flex:1">
+        <div class="payslip-title"><%= h.escapeHtml((company && company.name) || 'شرکت') %></div>
+        <div style="font-size:.75rem; color:#6b7280">
+          <% if (company && company.address) { %><%= h.escapeHtml(company.address) %><% } %>
+          <% if (company && company.phone) { %> — تلفن: <span dir="ltr"><%= h.pnum(company.phone) %></span><% } %>
+        </div>
+      </div>
+      <div style="text-align:left">
+        <div class="payslip-title">فیش حقوقی</div>
+        <div style="font-size:.75rem; color:#6b7280">دوره: <%= h.escapeHtml(periodLabel) %></div>
+        <% if (payslip && payslip.number) { %><div style="font-size:.72rem" dir="ltr">شماره: <%= h.escapeHtml(payslip.number) %></div><% } %>
+      </div>
+    </div>
+
+    <div class="payslip-meta">
+      <div><b>نام و نام خانوادگی:</b> <%= h.escapeHtml(run.employee_name || (emp && emp.full_name) || '') %></div>
+      <div><b>کد پرسنلی:</b> <span dir="ltr"><%= h.escapeHtml(run.personnel_code || (emp && emp.personnel_code) || '—') %></span></div>
+      <div><b>کد ملی:</b> <span dir="ltr"><%= h.pnum((emp && emp.national_id) || '—') %></span></div>
+      <div><b>واحد سازمانی:</b> <%= h.escapeHtml(dept ? dept.name : '—') %></div>
+      <div><b>عنوان شغلی:</b> <%= h.escapeHtml(job ? job.name : '—') %></div>
+      <div><b>تاریخ استخدام:</b> <%= emp && emp.hire_date ? jalali.formatJalaali(emp.hire_date) : '—' %></div>
+      <div><b>روز کارکرد:</b> <%= h.pnum(run.days_worked || 0) %></div>
+      <div><b>روز بیمه:</b> <%= h.pnum(run.days_insurance || 0) %></div>
+      <div><b>ساعت اضافه‌کاری:</b> <%= h.pnum(run.overtime_hours || 0) %></div>
+      <div><b>شماره بیمه:</b> <span dir="ltr"><%= h.pnum((emp && emp.insurance_no) || '—') %></span></div>
+      <div><b>بانک / حساب:</b> <%= h.escapeHtml((emp && emp.bank_name) || '—') %></div>
+      <div><b>شبا:</b> <span dir="ltr" style="font-size:.72rem"><%= h.escapeHtml((emp && emp.iban) || '—') %></span></div>
+    </div>
+
+    <div class="payslip-cols">
+      <table>
+        <thead><tr><th colspan="2">مزایا</th></tr>
+          <tr><th>عنوان</th><th style="width:110px">مبلغ (ریال)</th></tr></thead>
+        <tbody>
+          <% earnings.forEach(function (e) { %>
+            <tr><td><%= h.escapeHtml(e.title) %></td><td style="text-align:left"><%= h.formatNumber(e.amount) %></td></tr>
+          <% }); %>
+          <% for (var i = earnings.length; i < maxRows; i++) { %><tr><td>&nbsp;</td><td></td></tr><% } %>
+        </tbody>
+        <tfoot><tr><th>جمع مزایا</th><th style="text-align:left"><%= h.formatNumber(run.total_earnings) %></th></tr></tfoot>
+      </table>
+
+      <table>
+        <thead><tr><th colspan="2">کسور</th></tr>
+          <tr><th>عنوان</th><th style="width:110px">مبلغ (ریال)</th></tr></thead>
+        <tbody>
+          <% deductions.forEach(function (d) { %>
+            <tr><td><%= h.escapeHtml(d.title) %></td><td style="text-align:left"><%= h.formatNumber(d.amount) %></td></tr>
+          <% }); %>
+          <% for (var k = deductions.length; k < maxRows; k++) { %><tr><td>&nbsp;</td><td></td></tr><% } %>
+        </tbody>
+        <tfoot><tr><th>جمع کسور</th><th style="text-align:left"><%= h.formatNumber(run.total_deductions) %></th></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="net-box">
+      <span>خالص پرداختی این دوره</span>
+      <span><%= h.formatNumber(run.net) %> ریال</span>
+    </div>
+
+    <div style="font-size:.75rem; margin-top:.6rem; color:#4b5563">
+      <div>بیمه سهم کارمند: <%= h.formatNumber(run.insurance_employee) %> ریال — بیمه سهم کارفرما: <%= h.formatNumber(run.insurance_employer) %> ریال — مالیات بر درآمد: <%= h.formatNumber(run.income_tax) %> ریال</div>
+      <% if (payslip && payslip.verify_code) { %>
+        <div style="margin-top:.35rem">کد رهگیری فیش: <b dir="ltr"><%= h.escapeHtml(payslip.verify_code) %></b> — برای اعتبارسنجی، این کد را در سامانه منابع انسانی استعلام کنید.</div>
+      <% } %>
+    </div>
+
+    <div class="sign">
+      <div>مهر و امضای امور مالی<br><br>____________________</div>
+      <div>مهر و امضای منابع انسانی<br><br>____________________</div>
+    </div>
+
+    <div class="confidential">
+      این فیش به صورت سیستمی تولید شده است — سامانه منابع انسانی <%= h.escapeHtml((company && company.name) || '') %>
+      <% if (run.created_at) { %> — تاریخ محاسبه: <%= jalali.formatJalaaliDateTime(run.created_at) %><% } %>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<%- include('partials/head', { pageTitle: 'آزمون شخصیت‌شناسی', subtitle: 'ارزیابی استخدامی', company: company, backUrl: null }) %>
+
+<div class="public-card" style="max-width:620px;margin:0 auto">
+  <div class="public-head">
+    <span class="avatar" style="background:var(--info); color:#fff"><%- icon('brain', '', 20) %></span>
+    <div style="flex:1">
+      <div style="font-weight:700"><%= h.escapeHtml(test.name || 'آزمون شخصیت‌شناسی') %></div>
+      <div class="muted small">حدود <%= h.pnum(duration || test.duration_minutes || 15) %> دقیقه — <%= h.pnum(total) %> سؤال</div>
+    </div>
+  </div>
+  <div class="public-body-inner">
+    <p>
+      <%= h.escapeHtml(test.intro_text || 'در این آزمون، هر سؤال دو گزینه دارد. گزینه‌ای را انتخاب کنید که بیشتر به رفتار و ترجیح واقعی شما نزدیک است؛ پاسخ درست یا غلط وجود ندارد.') %>
+    </p>
+
+    <% if (test.instructions) { %>
+      <div class="alert alert-info"><%- icon('info') %><div><%= h.escapeHtml(test.instructions) %></div></div>
+    <% } %>
+
+    <div class="dl">
+      <div class="item"><span class="label">تعداد سؤال</span><span class="value"><%= h.pnum(total) %></span></div>
+      <div class="item"><span class="label">مدت پیشنهادی</span><span class="value"><%= h.pnum(test.duration_minutes || 15) %> دقیقه</span></div>
+      <div class="item"><span class="label">اعتبار لینک</span><span class="value"><%= assignment.expires_at ? j.formatJalaaliDateTime(assignment.expires_at) : '—' %></span></div>
+    </div>
+
+    <ul class="list-plain">
+      <li><%- icon('check', '', 15) %><div style="flex:1">پاسخ‌ها به‌صورت خودکار ذخیره می‌شوند؛ اگر اتصال قطع شود می‌توانید ادامه دهید.</div></li>
+      <li><%- icon('check', '', 15) %><div style="flex:1">در پایان، دکمه «پایان و ثبت آزمون» را بزنید تا پاسخ‌ها نهایی شود.</div></li>
+      <li><%- icon('lock', '', 15) %><div style="flex:1">تحلیل و نتیجه این آزمون محرمانه است و فقط توسط کارشناسان منابع انسانی بررسی می‌شود.</div></li>
+    </ul>
+
+    <button class="btn btn-primary btn-lg btn-block" type="button" id="startBtn"><%- icon('play', '', 17) %> شروع آزمون</button>
+    <div class="muted small center mt-1">با شروع آزمون، زمان‌سنج فعال می‌شود.</div>
+  </div>
+</div>
+
+<script>
+document.getElementById('startBtn').addEventListener('click', async function () {
+  var btn = this;
+  btn.disabled = true;
+  try {
+    var res = await HRM.post('/apply/assessment/<%= assignment.token %>/start', {});
+    window.location = res.redirect || '/apply/assessment/<%= assignment.token %>/test';
+  } catch (e) { HRM.toast('danger', e.message); btn.disabled = false; }
+});
+</script>
+
+<%- include('partials/foot', { company: company }) %>

@@ -1,0 +1,60 @@
+<div class="page-head no-print">
+  <div>
+    <h1><%- icon('qrcode') %> QR دعوت استخدام</h1>
+    <p class="muted">این تصویر را روی صفحه نمایش دهید تا داوطلب اسکن کند، یا لینک را برای او بفرستید.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/recruitment/invites"><%- icon('arrow-right', '', 16) %> فهرست دعوت‌نامه‌ها</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body center">
+    <div class="qr-box">
+      <img src="<%= dataUrl %>" alt="QR دعوت استخدام" width="280" height="280">
+      <div class="mt-2" style="font-size:.85rem">
+        <div><b><%= h.escapeHtml((companyName || '')) %></b></div>
+        <% if (job) { %><div class="muted"><%= h.escapeHtml(job.title) %></div><% } %>
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-3" style="text-align:right">
+      <%- icon('info') %>
+      <div>
+        <b>راهنمای داوطلب:</b> با دوربین موبایل این QR را اسکن کنید؛ سپس برای تأیید هویت، کد تأیید پیامکی را وارد می‌کنید و فرم استخدام را گام‌به‌گام تکمیل می‌نمایید.
+        <% if (invite.expires_at) { %><div class="small mt-1">اعتبار لینک: تا <%= j.formatJalaaliDateTime(invite.expires_at) %></div><% } %>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <label class="field-label">لینک مستقیم</label>
+      <div class="link-box" id="inviteLink"><%= link %></div>
+      <div class="btn-group mt-2">
+        <button class="btn btn-sm" type="button" data-copy="#inviteLink"><%- icon('copy', '', 15) %> کپی لینک</button>
+        <form method="post" action="/recruitment/invites/<%= invite.id %>/send" style="display:inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-sm btn-outline-primary" type="submit"><%- icon('send', '', 15) %> ارسال پیامک لینک</button>
+        </form>
+        <form method="post" action="/recruitment/invites/<%= invite.id %>/revoke" style="display:inline" data-confirm="این دعوت‌نامه باطل شود؟">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-sm btn-danger" type="submit"><%- icon('x', '', 15) %> ابطال</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card no-print">
+  <div class="card-header"><h3><%- icon('info') %> مشخصات دعوت‌نامه</h3></div>
+  <div class="card-body">
+    <div class="dl">
+      <div class="item"><span class="label">نام داوطلب</span><span class="value"><%= h.escapeHtml(invite.name || '—') %></span></div>
+      <div class="item"><span class="label">موبایل</span><span class="value" dir="ltr"><%= h.pnum(invite.mobile || '') %></span></div>
+      <div class="item"><span class="label">کد ملی</span><span class="value" dir="ltr"><%= h.pnum(invite.national_id || '—') %></span></div>
+      <div class="item"><span class="label">موقعیت شغلی</span><span class="value"><%= h.escapeHtml(job ? job.title : '—') %></span></div>
+      <div class="item"><span class="label">وضعیت</span><span class="value"><%- uikitBadge(invite.status) %></span></div>
+      <div class="item"><span class="label">تأیید پیامکی</span><span class="value"><%= invite.requires_otp ? 'لازم است' : 'لازم نیست' %></span></div>
+    </div>
+  </div>
+</div>

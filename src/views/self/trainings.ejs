@@ -1,0 +1,39 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('graduation') %> دوره‌های آموزشی من</h1>
+    <p class="muted">دوره‌های تخصیص‌داده‌شده، میزان پیشرفت و گواهی‌نامه‌ها</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>دوره</th><th>نوع</th><th>مدت</th><th>پیشرفت</th><th>امتیاز</th><th>وضعیت</th><th>گواهی‌نامه</th></tr></thead>
+        <tbody>
+          <% (list || []).forEach(function (r) {
+               var prog = Math.max(0, Math.min(100, Math.round(Number(r.progress) || 0)));
+               var st = { assigned: 'تخصیص‌داده‌شده', in_progress: 'در حال یادگیری', completed: 'تکمیل‌شده', expired: 'منقضی' }[r.status] || r.status || '—';
+          %>
+            <tr>
+              <td><%= h.escapeHtml(r.title || '—') %></td>
+              <td><%= r.type === 'online' ? 'آنلاین' : (r.type === 'internal' ? 'داخلی' : 'حضوری') %></td>
+              <td class="num"><%= r.duration_hours ? h.pnum(r.duration_hours) + ' ساعت' : '—' %></td>
+              <td style="min-width:8rem">
+                <div class="bar-track"><span class="bar-fill bg-<%= prog >= 100 ? 'success' : 'info' %>" style="width:<%= prog %>%"></span></div>
+                <span class="muted small"><%= h.pnum(prog) %>٪</span>
+              </td>
+              <td class="num"><%= r.score !== null && r.score !== undefined ? h.pnum(r.score) : '—' %></td>
+              <td><span class="badge <%= r.status === 'completed' ? 'success' : (r.status === 'in_progress' ? 'info' : 'warning') %>"><%= h.escapeHtml(st) %></span></td>
+              <td><%= r.certificate_no ? '<span class="badge success">صادر شد</span>' : (r.has_certificate ? '<span class="muted small">در انتظار</span>' : '—') %></td>
+            </tr>
+          <% }); %>
+          <% if (!list || !list.length) { %><tr><td colspan="7" class="muted center">دوره‌ای به شما تخصیص داده نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

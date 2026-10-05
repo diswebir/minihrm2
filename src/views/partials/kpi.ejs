@@ -1,0 +1,13 @@
+<%
+  var linkUrl = (typeof url !== 'undefined' && url) ? url : null;
+  var tag = linkUrl ? 'a' : 'div';
+  var noteText = typeof note !== 'undefined' ? note : null;
+%>
+<<%= tag %><%= linkUrl ? ' href="' + linkUrl + '"' : '' %> class="kpi-card kpi-<%= color || 'primary' %>">
+  <span class="kpi-icon"><%- icon(ico || 'chart', '', 22) %></span>
+  <span class="kpi-body">
+    <span class="kpi-value"><%= value %></span>
+    <span class="kpi-label"><%= h.escapeHtml(label) %></span>
+    <% if (noteText) { %><span class="kpi-hint"><%= h.escapeHtml(noteText) %></span><% } %>
+  </span>
+</<%= tag %>>

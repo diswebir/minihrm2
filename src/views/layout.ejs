@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="<%= (typeof theme !== 'undefined' && theme) ? theme : 'light' %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="csrf-token" content="<%= (typeof csrfToken !== 'undefined' && csrfToken) ? csrfToken : '' %>">
+  <title><%= title ? title + ' | ' : '' %><%= appName %></title>
+  <link rel="stylesheet" href="/css/app.css">
+  <% if (typeof extraCss !== 'undefined' && extraCss) { %><link rel="stylesheet" href="<%= extraCss %>"><% } %>
+  <% if (primaryColor && primaryColor !== '#2563eb') { %>
+  <style>:root { --primary: <%= primaryColor %>; }</style>
+  <% } %>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip-link" href="#main">پرش به محتوای اصلی</a>
+<div class="app">
+  <%- include('partials/sidebar') %>
+
+  <div class="main">
+    <header class="topbar no-print">
+      <button class="btn btn-ghost btn-icon sidebar-toggle" type="button" data-sidebar-toggle aria-label="نمایش منو">
+        <%- icon('menu', '', 20) %>
+      </button>
+
+      <div>
+        <div class="page-title"><%= title || 'داشبورد' %></div>
+        <% if (typeof subtitle !== 'undefined' && subtitle) { %><div class="breadcrumb"><%= subtitle %></div><% } %>
+      </div>
+
+      <div style="margin-right:auto; display:flex; align-items:center; gap:.35rem">
+        <div class="search-suggest hide-sm" style="position:relative">
+          <div class="search" style="position:relative">
+            <%- icon('search') %>
+            <input type="search" id="globalSearch" placeholder="جست‌وجوی سریع… (Ctrl+K)" autocomplete="off"
+                   style="padding-right:2.2rem; min-width:230px" aria-label="جست‌وجوی سراسری">
+          </div>
+          <div class="suggest-list hidden" id="globalSearchResults"></div>
+        </div>
+
+        <button class="btn btn-ghost btn-icon" type="button" data-theme-toggle title="تغییر پوسته روشن/تاریک" aria-label="تغییر پوسته">
+          <%- icon('moon', '', 19) %>
+        </button>
+
+        <a class="btn btn-ghost btn-icon" href="/notifications" title="اطلاع‌رسانی‌ها" aria-label="اطلاع‌رسانی‌ها" style="position:relative">
+          <%- icon('bell', '', 19) %>
+          <% if (unreadNotifications) { %>
+            <span class="badge danger" style="position:absolute; top:-4px; inset-inline-start:-4px; font-size:.68rem; padding:0 .35rem"><%= h.pnum(unreadNotifications) %></span>
+          <% } %>
+        </a>
+
+        <div class="dropdown" style="position:relative">
+          <button class="btn btn-ghost" type="button" data-menu-toggle aria-haspopup="true" aria-expanded="false">
+            <span class="avatar sm" style="background: <%= h.colorFromString(user ? user.full_name : '?') %>">
+              <%- h.escapeHtml(h.initials(user ? user.full_name : '؟')) %>
+            </span>
+            <span class="hide-sm" style="font-size:.85rem"><%= h.truncate(user ? user.full_name : '', 22) %></span>
+            <%- icon('chevron-down', '', 15) %>
+          </button>
+          <div class="modal-backdrop hidden" data-menu-panel style="background:transparent; align-items:flex-start; justify-content:flex-start">
+            <div class="card" style="position:absolute; top:56px; inset-inline-start:1rem; width:250px; margin:0; box-shadow:var(--shadow-lg)">
+              <div class="card-body" style="padding:.8rem">
+                <div class="user-cell mb-2">
+                  <span class="avatar" style="background: <%= h.colorFromString(user ? user.full_name : '?') %>"><%- h.escapeHtml(h.initials(user ? user.full_name : '؟')) %></span>
+                  <div style="min-width:0">
+                    <div class="cell-main truncate"><%= h.escapeHtml(user ? user.full_name : '') %></div>
+                    <div class="cell-sub"><%= h.escapeHtml(user && user.role_name ? user.role_name : '') %></div>
+                  </div>
+                </div>
+                <a class="nav-item" href="/profile"><%- icon('user', '', 17) %> پروفایل من</a>
+                <a class="nav-item" href="/profile/password"><%- icon('key', '', 17) %> تغییر گذرواژه</a>
+                <a class="nav-item" href="/notifications"><%- icon('bell', '', 17) %> اطلاع‌رسانی‌ها</a>
+                <hr style="border:none;border-top:1px solid var(--border);margin:.4rem 0">
+                <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="nav-item" type="submit" style="width:100%; border:none; background:none; cursor:pointer; text-align:right; color:var(--danger)">
+                    <%- icon('logout', '', 17) %> خروج از حساب
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+      <%- body %>
+    </main>
+  </div>
+</div>
+
+<div class="toast-stack no-print" id="toastStack"></div>
+<% if (flash) { %>
+<template id="flashData" data-type="<%= h.escapeHtml(flash.type || 'info') %>" data-message="<%= h.escapeHtml(flash.message || '') %>"></template>
+<% } %>
+
+<script src="/js/app.js"></script>
+<% if (typeof extraJs !== 'undefined' && extraJs) { %><script src="<%= extraJs %>"></script><% } %>
+<%- typeof inlineJs !== 'undefined' && inlineJs ? '<script>' + inlineJs + '</script>' : '' %>
+</body>
+</html>

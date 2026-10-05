@@ -1,0 +1,27 @@
+<div class="card">
+  <div class="card-header">
+    <h3><%- icon('bell') %> اطلاع‌رسانی‌ها</h3>
+    <div class="actions">
+      <button class="btn btn-sm" type="button" onclick="fetch('/notifications/read',{method:'POST',headers:{'X-CSRF-Token':window.__csrf}}).then(function(){location.reload()})">علامت‌گذاری همه به‌عنوان خوانده‌شده</button>
+    </div>
+  </div>
+  <div class="card-body tight">
+    <% if (!rows.length) { %>
+      <div class="empty-state"><%- icon('bell', '', 46) %><h4>اطلاع‌رسانی جدیدی ندارید</h4><p class="muted">یادآورها و پیام‌های سامانه اینجا نمایش داده می‌شوند.</p></div>
+    <% } else { %>
+      <ul class="list-plain" style="padding:.4rem .8rem">
+        <% rows.forEach(function (n) { %>
+          <li style="<%= n.read_at ? '' : 'background:var(--primary-50);border-radius:8px;padding:.6rem' %>">
+            <span class="badge <%= h.statusColor(n.level || 'info') %>"><%= h.escapeHtml(n.level || 'اطلاع') %></span>
+            <div style="flex:1">
+              <div style="font-weight:<%= n.read_at ? 400 : 600 %>"><%= h.escapeHtml(n.title) %></div>
+              <% if (n.body) { %><div class="muted small"><%= h.escapeHtml(n.body) %></div><% } %>
+            </div>
+            <span class="muted small nowrap"><%= h.relativeTime(n.created_at) %></span>
+            <% if (n.link) { %><a class="btn btn-sm" href="<%= n.link %>">مشاهده</a><% } %>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>

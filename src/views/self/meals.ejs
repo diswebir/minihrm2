@@ -1,0 +1,64 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('utensils') %> رزرو غذا</h1>
+    <p class="muted">منوهای پیش‌رو را ببینید و تا موعد مقرر وعده خود را رزرو کنید</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/self/transport"><%- icon('bus', '', 16) %> سرویس من</a>
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1.3fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('utensils') %> منوهای پیش‌رو</h3></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead><tr><th>تاریخ</th><th>وعده</th><th>منو</th><th>ظرفیت</th><th class="ta-center">رزرو</th></tr></thead>
+          <tbody>
+            <% (menus || []).forEach(function (m) { %>
+              <tr>
+                <td><%= m.menu_date ? j.formatJalaali(m.menu_date) : '—' %></td>
+                <td><%= ({ breakfast: 'صبحانه', lunch: 'ناهار', dinner: 'شام', snack: 'میان‌وعده' })[m.meal_type] || m.meal_type || '—' %></td>
+                <td><%= h.escapeHtml(m.title || '—') %><% if (m.description) { %><div class="muted small"><%= h.escapeHtml(m.description) %></div><% } %></td>
+                <td class="num"><%= h.pnum(m.reserved_count || 0) %><% if (m.capacity) { %> / <%= h.pnum(m.capacity) %><% } %></td>
+                <td class="ta-center">
+                  <form method="post" action="/self/meals" style="display:inline-flex;gap:.3rem;align-items:center">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <input type="hidden" name="menu_id" value="<%= m.id %>">
+                    <input type="text" name="count" value="1" data-numeric style="width:3rem">
+                    <button class="btn btn-sm btn-primary" type="submit"><%- icon('check', '', 14) %> رزرو</button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+            <% if (!menus || !menus.length) { %><tr><td colspan="5" class="muted center">منویی برای روزهای آینده ثبت نشده است.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('check-circle') %> رزروهای من</h3></div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead><tr><th>تاریخ</th><th>وعده</th><th>تعداد</th><th>وضعیت</th></tr></thead>
+          <tbody>
+            <% (mine || []).forEach(function (r) { %>
+              <tr>
+                <td><%= r.meal_date ? j.formatJalaali(r.meal_date) : '—' %></td>
+                <td><%= ({ breakfast: 'صبحانه', lunch: 'ناهار', dinner: 'شام', snack: 'میان‌وعده' })[r.meal_type] || r.meal_type || '—' %></td>
+                <td class="num"><%= h.pnum(r.count || 1) %></td>
+                <td><span class="badge <%= r.status === 'reserved' ? 'success' : (r.status === 'canceled' ? 'danger' : 'info') %>"><%= r.status === 'reserved' ? 'رزرو شده' : (r.status === 'canceled' ? 'لغوشده' : 'ثبت‌شده') %></span></td>
+              </tr>
+            <% }); %>
+            <% if (!mine || !mine.length) { %><tr><td colspan="4" class="muted center">رزروی ثبت نشده است.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

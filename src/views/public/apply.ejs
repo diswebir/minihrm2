@@ -1,0 +1,93 @@
+<%- include('partials/head', { pageTitle: 'فرصت‌های شغلی', subtitle: 'موقعیت‌های شغلی باز شرکت', company: company, backUrl: null }) %>
+
+<div class="public-card" style="margin-bottom:1rem">
+  <div class="public-body-inner">
+    <h1 style="font-size:1.1rem; margin-bottom:.3rem"><%- icon('briefcase', '', 18) %> فرصت‌های شغلی <%= h.escapeHtml((company && company.name) || '') %></h1>
+    <p class="muted small">
+      <% if (company && company.about) { %><%= h.escapeHtml(company.about) %><% } else { %>برای مشاهده جزئیات هر موقعیت شغلی روی آن کلیک کنید و فرم استخدام را آنلاین تکمیل نمایید.<% } %>
+    </p>
+    <% if (company && company.address) { %>
+      <div class="meta-row muted small"><%- icon('map-pin', '', 15) %> <%= h.escapeHtml(company.address) %></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('list') %> موقعیت‌های باز (<%= h.pnum(jobsCount) %>)</h3>
+    <div class="actions">
+      <a class="btn btn-sm" href="/apply/status"><%- icon('search', '', 15) %> پیگیری پرونده</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <% if (!jobs.length) { %>
+      <div class="empty-state"><%- icon('briefcase', '', 40) %><p class="muted">در حال حاضر موقعیت شغلی بازی ثبت نشده است.</p></div>
+    <% } %>
+    <div class="tile-grid">
+      <% jobs.forEach(function (job) { %>
+        <div class="job-card" style="border:1px solid var(--border); border-radius:10px; padding:.85rem">
+          <div class="c-title"><%= h.escapeHtml(job.title) %></div>
+          <div class="c-desc muted small">
+            <%= h.escapeHtml(job.employment_type || '') %>
+            <% if (job.location) { %> — <%= h.escapeHtml(job.location) %><% } %>
+            <% if (job.headcount) { %> — ظرفیت: <%= h.pnum(job.headcount) %> نفر<% } %>
+          </div>
+          <% if (job.description) { %><p class="small muted" style="margin:.4rem 0"><%= h.escapeHtml(h.truncate(job.description, 160)) %></p><% } %>
+          <button class="btn btn-primary btn-sm" type="button" data-job="<%= job.id %>" data-title="<%= h.escapeHtml(job.title) %>">
+            <%- icon('user-plus', '', 15) %> درخواست این موقعیت
+          </button>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<% if (allowPublicApply) { %>
+  <div class="modal-backdrop hidden" id="directModal">
+    <div class="modal">
+      <div class="modal-header"><h3>ثبت درخواست — <span id="mJobTitle"></span></h3>
+        <button class="btn btn-ghost btn-icon" type="button" data-modal-close>✕</button></div>
+      <form id="directForm">
+        <div class="modal-body">
+          <input type="hidden" name="job_req_id" id="mJobId">
+          <div class="form-group"><label class="field-label">نام و نام خانوادگی</label><input type="text" name="name" required></div>
+          <div class="form-group"><label class="field-label">شماره موبایل <span class="req">*</span></label>
+            <input type="text" name="mobile" dir="ltr" inputmode="numeric" maxlength="11" placeholder="09123456789" required>
+            <span class="field-help">فرم استخدام گام‌به‌گام از طریق همین صفحه ادامه می‌یابد.</span></div>
+          <div class="form-group"><label class="field-label">کد ملی (اختیاری)</label><input type="text" name="national_id" dir="ltr" inputmode="numeric" maxlength="10"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" type="submit"><%- icon('send', '', 16) %> شروع فرم استخدام</button>
+          <button class="btn" type="button" data-modal-close>انصراف</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% } %>
+
+<script>
+(function () {
+  var modal = document.getElementById('directModal');
+  document.querySelectorAll('[data-job]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (!modal) { HRM.toast('warning', 'ثبت درخواست آنلاین در حال حاضر غیرفعال است.'); return; }
+      document.getElementById('mJobId').value = btn.dataset.job;
+      document.getElementById('mJobTitle').textContent = btn.dataset.title;
+      modal.classList.remove('hidden');
+    });
+  });
+  var form = document.getElementById('directForm');
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var values = {};
+      new FormData(form).forEach(function (v, k) { values[k] = v; });
+      try {
+        var res = await HRM.post('/apply/direct', values);
+        window.location = res.redirect;
+      } catch (err) { HRM.toast('danger', err.message); }
+    });
+  }
+})();
+</script>
+
+<%- include('partials/foot', { company: company }) %>

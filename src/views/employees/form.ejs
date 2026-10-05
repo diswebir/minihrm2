@@ -1,0 +1,127 @@
+<%
+  var groups = [];
+  (fields || []).forEach(function (f) {
+    var g = f.group || 'اطلاعات عمومی';
+    if (!groups.filter(function (x) { return x.name === g; }).length) groups.push({ name: g, fields: [] });
+    groups.filter(function (x) { return x.name === g; })[0].fields.push(f);
+  });
+  var val = function (name) {
+    var v = row ? row[name] : null;
+    if (v === null || v === undefined) return '';
+    if (name === 'birth_date' || name === 'hire_date' || name === 'probation_end_date' || name === 'termination_date') return j.formatJalaali(v);
+    return v;
+  };
+  var icon4 = {
+    'مشخصات فردی': 'user', 'تماس و نشانی': 'phone', 'اطلاعات شغلی': 'briefcase',
+    'تحصیلات و مهارت': 'graduation', 'بیمه و بانک': 'shield', 'مالی': 'wallet'
+  };
+%>
+<div class="page-head no-print">
+  <div>
+    <h1><%- icon(isNew ? 'user-plus' : 'user') %> <%= h.escapeHtml(title) %></h1>
+    <p class="muted"><% if (isNew) { %>اطلاعات پایه کارمند را وارد کنید؛ بقیه بخش‌ها را می‌توانید بعداً از پرونده تکمیل کنید.<% } else { %>تغییرات در تاریخچه پرونده ثبت می‌شود.<% } %></p>
+  </div>
+  <div class="page-actions">
+    <% if (!isNew && employee) { %><a class="btn" href="/employees/<%= employee.id %>"><%- icon('eye', '', 16) %> پرونده کارمند</a><% } %>
+    <a class="btn" href="/employees"><%- icon('users', '', 16) %> فهرست کارکنان</a>
+  </div>
+</div>
+
+<% if (Object.keys(errors || {}).length) { %>
+  <div class="alert alert-danger">
+    <%- icon('alert') %>
+    <div><b>لطفاً خطاهای زیر را برطرف کنید:</b>
+      <ul style="margin:.4rem 0 0 1rem">
+        <% Object.keys(errors).forEach(function (k) { %><li><%= h.escapeHtml(errors[k]) %></li><% }); %>
+      </ul>
+    </div>
+  </div>
+<% } %>
+
+<form method="post" action="<%= (isNew ? '/employees' : '/employees/' + employee.id) + '?_csrf=' + csrfToken %>" enctype="multipart/form-data" data-guard id="employeeForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <% groups.forEach(function (g) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon(icon4[g.name] || 'grid') %> <%= h.escapeHtml(g.name) %></h3></div>
+      <div class="card-body">
+        <div class="form-row">
+          <% g.fields.forEach(function (f) { %>
+            <div class="col-<%= f.type === 'textarea' ? 12 : (f.col || 6) %>">
+              <div class="form-group">
+                <label class="field-label" for="f_<%= f.name %>"><%= h.escapeHtml(f.label) %>
+                  <% if (f.required) { %><span class="req">*</span><% } %>
+                </label>
+
+                <% if (f.type === 'textarea') { %>
+                  <textarea id="f_<%= f.name %>" name="<%= f.name %>" rows="<%= f.rows || 3 %>"><%= h.escapeHtml(val(f.name)) %></textarea>
+
+                <% } else if (f.type === 'select') { %>
+                  <select id="f_<%= f.name %>" name="<%= f.name %>">
+                    <option value="">— انتخاب کنید —</option>
+                    <% (f.options || []).forEach(function (o) {
+                         var ov = (typeof o === 'object') ? o.value : o;
+                         var ol = (typeof o === 'object') ? o.label : o; %>
+                      <option value="<%= h.escapeHtml(ov) %>" <%= String(val(f.name)) === String(ov) ? 'selected' : '' %>><%= h.escapeHtml(ol) %></option>
+                    <% }); %>
+                  </select>
+
+                <% } else if (f.type === 'lookup') { %>
+                  <select id="f_<%= f.name %>" name="<%= f.name %>">
+                    <option value="">— انتخاب کنید —</option>
+                    <% (locals.lookups && locals.lookups[f.name] ? locals.lookups[f.name] : []).forEach(function (o) { %>
+                      <option value="<%= o.value %>" <%= String(val(f.name)) === String(o.value) ? 'selected' : '' %>><%= h.escapeHtml(o.label) %></option>
+                    <% }); %>
+                  </select>
+
+                <% } else if (f.type === 'file') { %>
+                  <input type="file" id="f_<%= f.name %>" name="<%= f.name %>" accept="<%= f.accept || '*/*' %>" data-upload
+                         data-upload-url="/files/upload-auth" data-upload-target="file_<%= f.name %>">
+                  <input type="hidden" id="file_<%= f.name %>" name="<%= f.name %>_file" value="<%= h.escapeHtml(val(f.name)) %>">
+                  <% if (val(f.name)) { %><div class="field-help">فایل فعلی: <a class="link" href="/files/<%= h.escapeHtml(val(f.name)) %>" target="_blank">مشاهده</a></div><% } %>
+
+                <% } else if (f.type === 'checkbox') { %>
+                  <label class="check"><input type="checkbox" id="f_<%= f.name %>" name="<%= f.name %>" value="1" <%= val(f.name) ? 'checked' : '' %>><span class="check-label"><%= h.escapeHtml(f.label) %></span></label>
+
+                <% } else { %>
+                  <input type="<%= f.type === 'number' || f.type === 'money' ? 'text' : 'text' %>"
+                         id="f_<%= f.name %>" name="<%= f.name %>"
+                         value="<%= h.escapeHtml(f.type === 'money' && val(f.name) !== '' ? h.formatNumber(val(f.name)) : val(f.name)) %>"
+                         <%= f.dir ? 'dir="' + f.dir + '"' : '' %>
+                         <%= f.type === 'date' ? 'data-jalali' : '' %>
+                         <%= f.type === 'money' ? 'data-money' : '' %>
+                         <%= f.type === 'number' ? 'data-numeric' : '' %>
+                         <%= f.maxlength ? 'maxlength="' + f.maxlength + '"' : '' %>
+                         <%= f.placeholder ? 'placeholder="' + h.escapeHtml(f.placeholder) + '"' : '' %>>
+                <% } %>
+
+                <% if (f.help) { %><span class="field-help"><%= h.escapeHtml(f.help) %></span><% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+
+  <% if (isNew) { %>
+    <div class="card">
+      <div class="card-header"><h3><%- icon('key') %> دسترسی سامانه (اختیاری)</h3></div>
+      <div class="card-body">
+        <label class="check"><input type="checkbox" name="create_user" value="1" data-depends-on="create_user" id="create_user"><span class="check-label">برای این کارمند حساب کاربری ساخته شود تا به سامانه ورود کند</span></label>
+        <div class="form-row mt-2 hidden" data-depends-target="create_user">
+          <div class="col-4"><div class="form-group"><label class="field-label">نام کاربری</label><input type="text" name="username" dir="ltr" placeholder="مثال: a.hoseini"></div></div>
+          <div class="col-4"><div class="form-group"><label class="field-label">نقش</label>
+            <select name="role_id"><option value="">— انتخاب —</option><% (locals.roles || []).forEach(function (r) { %><option value="<%= r.id %>"><%= h.escapeHtml(r.name) %></option><% }); %></select></div></div>
+          <div class="col-4"><div class="form-group"><label class="field-label">گذرواژه موقت</label><input type="text" name="temp_password" dir="ltr" placeholder="در صورت خالی بودن، ساخته می‌شود">
+            <span class="field-help">کاربر در نخستین ورود، گذرواژه را تغییر می‌دهد.</span></div></div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <div class="sticky-actions no-print">
+    <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> <%= isNew ? 'ثبت کارمند' : 'ذخیره تغییرات' %></button>
+    <a class="btn" href="/employees">انصراف</a>
+  </div>
+</form>

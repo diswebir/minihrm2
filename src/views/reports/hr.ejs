@@ -1,0 +1,33 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('users') %> گزارش منابع انسانی</h1>
+    <p class="muted">وضعیت نیروی انسانی، استخدام‌های اخیر، مرخصی‌ها و خروج از خدمت</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/reports"><%- icon('arrow-right', '', 16) %> همه گزارش‌ها</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <%- include('../partials/kpi', { label: 'کارکنان فعال', value: h.pnum(headcount), ico: 'users', color: 'primary', url: '/employees' }) %>
+  <%- include('../partials/kpi', { label: 'مرخصی‌های تأییدشده', value: h.pnum(leaves), ico: 'calendar', color: 'info', url: '/attendance/leaves' }) %>
+  <%- include('../partials/kpi', { label: 'خروج از خدمت تکمیل‌شده', value: h.pnum(turnover), ico: 'logout', color: 'warning', url: '/offboarding/requests' }) %>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('user-plus') %> آخرین استخدام‌ها</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>نام</th><th>تاریخ استخدام</th></tr></thead>
+        <tbody>
+          <% (hires || []).forEach(function (x) { %>
+            <tr><td><%= h.escapeHtml(x.full_name || '') %></td><td><%= x.hire_date ? j.formatJalaali(x.hire_date) : '—' %></td></tr>
+          <% }); %>
+          <% if (!hires || !hires.length) { %><tr><td colspan="2" class="muted center">داده‌ای موجود نیست.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

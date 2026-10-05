@@ -1,0 +1,41 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('receipt') %> فیش‌های حقوقی من</h1>
+    <p class="muted">فهرست فیش‌های صادرشده — برای مشاهده و چاپ روی هر ردیف کلیک کنید</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/self/leaves"><%- icon('calendar', '', 16) %> مرخصی‌ها</a>
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>دوره</th><th>شماره فیش</th><th>روز کارکرد</th><th>جمع مزایا</th><th>جمع کسور</th><th>خالص پرداختی</th><th>وضعیت</th><th class="ta-center">فیش</th></tr></thead>
+        <tbody>
+          <% (list || []).forEach(function (r) { %>
+            <tr>
+              <td><%= h.escapeHtml(r.period_title || (r.year ? r.year + '/' + r.month : '—')) %></td>
+              <td class="muted small" dir="ltr"><%= h.escapeHtml(r.slip_number || '—') %><% if (r.verify_code) { %><div><%= h.escapeHtml(r.verify_code) %></div><% } %></td>
+              <td class="num"><%= h.pnum(r.days_worked || 0) %></td>
+              <td class="num"><%= h.money(r.total_earnings || r.gross || 0, { suffix: false }) %></td>
+              <td class="num"><%= h.money((Number(r.insurance_employee || 0) + Number(r.income_tax || 0)), { suffix: false }) %></td>
+              <td class="num"><b><%= h.money(r.net || 0, { suffix: false }) %></b></td>
+              <td>
+                <% if (r.payment_status === 'paid') { %><span class="badge success">پرداخت‌شده</span>
+                <% } else if (r.status === 'issued' || r.status === 'approved' || r.status === 'locked') { %><span class="badge info">صادرشده</span>
+                <% } else { %><span class="badge warning">در جریان</span><% } %>
+              </td>
+              <td class="ta-center">
+                <a class="btn btn-sm" href="/self/payslips/<%= r.id %>"><%- icon('printer', '', 15) %> مشاهده و چاپ</a>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (!list || !list.length) { %><tr><td colspan="8" class="muted center">هنوز فیش حقوقی برای شما صادر نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

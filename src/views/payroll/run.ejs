@@ -1,0 +1,149 @@
+<%
+  var earnings = (snap && snap.earnings) || [];
+  var deductions = (snap && snap.deductions) || [];
+  var employer = (snap && snap.employer) || [];
+  var totals = (snap && snap.totals) || {};
+  var locked = ['locked', 'paid'].includes(String(run.period_status));
+%>
+<div class="page-head no-print">
+  <div>
+    <h1><%- icon('receipt') %> فیش حقوقی <%= h.escapeHtml(run.employee_name || '') %></h1>
+    <p class="muted">
+      دوره: <%= h.escapeHtml(run.period_title || '') %>
+      — کد پرسنلی: <span dir="ltr"><%= h.escapeHtml(run.personnel_code || '—') %></span>
+      — وضعیت: <%- h.statusLabel(run.payment_status || 'unpaid') %>
+    </p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/payroll/periods/<%= run.period_id %>"><%- icon('arrow-right', '', 16) %> بازگشت به دوره</a>
+    <a class="btn btn-primary" href="/payroll/runs/<%= run.id %>/print" target="_blank"><%- icon('printer', '', 16) %> نسخه چاپی / PDF</a>
+    <% if (!locked) { %>
+      <form method="post" action="/payroll/runs/<%= run.id %>/recalc" style="display:inline" data-confirm="این فیش با آخرین داده‌ها بازمحاسبه شود؟">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn" type="submit"><%- icon('refresh', '', 16) %> بازمحاسبه</button>
+      </form>
+    <% } %>
+    <% if (can('payroll.payslip.issue')) { %>
+      <form method="post" action="/payroll/runs/<%= run.id %>/issue" style="display:inline" data-confirm="فیش رسمی با شماره و کد رهگیری صادر شود؟">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-success" type="submit"><%- icon('check-circle', '', 16) %> صدور فیش رسمی</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<div class="kpi-grid no-print">
+  <div class="kpi-card kpi-primary"><span class="kpi-icon"><%- icon('trending-up', '', 22) %></span><span class="kpi-body"><span class="kpi-value"><%= h.formatNumber(run.total_earnings) %></span><span class="kpi-label">جمع مزایا (ریال)</span></span></div>
+  <div class="kpi-card kpi-warning"><span class="kpi-icon"><%- icon('trending-down', '', 22) %></span><span class="kpi-body"><span class="kpi-value"><%= h.formatNumber(run.total_deductions) %></span><span class="kpi-label">جمع کسور (ریال)</span></span></div>
+  <div class="kpi-card kpi-success"><span class="kpi-icon"><%- icon('bank', '', 22) %></span><span class="kpi-body"><span class="kpi-value"><%= h.formatNumber(run.net) %></span><span class="kpi-label">خالص پرداختی (ریال)</span></span></div>
+  <div class="kpi-card kpi-info"><span class="kpi-icon"><%- icon('clock', '', 22) %></span><span class="kpi-body"><span class="kpi-value"><%= h.pnum(run.days_worked || 0) %>/<%= h.pnum(run.days_insurance || 0) %></span><span class="kpi-label">روز کارکرد / روز بیمه</span></span></div>
+</div>
+
+<div class="grid-2 no-print" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('plus-circle') %> اقلام مزایا</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>عنوان</th><th>مبلغ (ریال)</th><th>مالیات</th><th>بیمه</th></tr></thead>
+        <tbody>
+          <% earnings.forEach(function (e) { %>
+            <tr>
+              <td><%= h.escapeHtml(e.title) %><% if (e.note) { %><div class="cell-sub"><%= h.escapeHtml(e.note) %></div><% } %></td>
+              <td class="num"><%= h.formatNumber(e.amount) %></td>
+              <td><%= e.taxable ? '<span class="badge success">دارد</span>' : '<span class="badge muted">ندارد</span>' %></td>
+              <td><%= e.insurable ? '<span class="badge success">دارد</span>' : '<span class="badge muted">ندارد</span>' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+        <tfoot><tr><th>جمع مزایا</th><th class="num"><%= h.formatNumber(run.total_earnings) %></th><th></th><th></th></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('minus-circle') %> کسور</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>عنوان</th><th>مبلغ (ریال)</th><th>توضیح</th></tr></thead>
+        <tbody>
+          <% deductions.forEach(function (d) { %>
+            <tr>
+              <td><%= h.escapeHtml(d.title) %></td>
+              <td class="num"><%= h.formatNumber(d.amount) %></td>
+              <td class="muted small"><%= h.escapeHtml(d.note || '') %></td>
+            </tr>
+          <% }); %>
+          <% if (!deductions.length) { %><tr><td colspan="3" class="muted center">کسر مستقیمی روی این فیش نیست.</td></tr><% } %>
+        </tbody>
+        <tfoot><tr><th>جمع کسور</th><th class="num"><%= h.formatNumber(run.total_deductions) %></th><th></th></tr></tfoot>
+      </table>
+      <div class="net-box"><span>خالص پرداختی</span><b><%= h.formatNumber(run.net) %> ریال</b></div>
+    </div>
+  </div>
+</div>
+
+<% if (editable) { %>
+  <div class="card no-print">
+    <div class="card-header"><h3><%- icon('edit') %> افزودن / کسر قلم برای همین فیش</h3></div>
+    <div class="card-body">
+      <form method="post" action="/payroll/runs/<%= run.id %>/items" data-guard>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="form-row">
+          <div class="col-3"><div class="form-group"><label class="field-label">عنوان قلم</label><input type="text" name="title" placeholder="مثال: پاداش پروژه" required></div></div>
+          <div class="col-3"><div class="form-group"><label class="field-label">قلم مرتبط (اختیاری)</label>
+            <select name="component_id"><option value="">— قلم دستی —</option><% components.forEach(function (c) { %><option value="<%= c.id %>"><%= h.escapeHtml(c.name) %> (<%= c.type === 'deduction' ? 'کسور' : 'مزایا' %>)</option><% }); %></select></div></div>
+          <div class="col-2"><div class="form-group"><label class="field-label">نوع</label><select name="type"><option value="earning">مزایا (+)</option><option value="deduction">کسور (−)</option></select></div></div>
+          <div class="col-2"><div class="form-group"><label class="field-label">مبلغ (ریال)</label><input type="text" name="amount" data-money required></div></div>
+          <div class="col-2"><div class="form-group"><label class="field-label">دلیل</label><input type="text" name="reason"></div></div>
+        </div>
+        <button class="btn btn-primary btn-sm" type="submit"><%- icon('save', '', 15) %> ثبت و محاسبه مجدد</button>
+        <span class="field-help">افزودن قلم به این فیش، محاسبه حقوق را برای همین کارمند به‌روزرسانی می‌کند.</span>
+      </form>
+
+      <% if (adjustments.length) { %>
+        <table class="table compact mt-2">
+          <thead><tr><th>عنوان</th><th>نوع</th><th>مبلغ</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+          <tbody>
+            <% adjustments.forEach(function (a) { %>
+              <tr>
+                <td><%= h.escapeHtml(a.title) %> <span class="muted small"><%= h.escapeHtml(a.reason || '') %></span></td>
+                <td><%= a.type === 'deduction' ? '<span class="badge danger">کسور</span>' : '<span class="badge success">مزایا</span>' %></td>
+                <td class="num"><%= h.formatNumber(a.amount) %></td>
+                <td><%- h.statusLabel(a.status) %></td>
+                <td>
+                  <form method="post" action="/payroll/adjustments/<%= a.id %>/remove" style="display:inline" data-confirm="این قلم حذف و فیش بازمحاسبه شود؟">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-icon btn-sm" type="submit" title="حذف"><%- icon('trash', '', 15) %></button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+<% } else if (locked) { %>
+  <div class="alert alert-warning no-print"><%- icon('lock') %><div>این دوره <%= h.statusLabel(run.period_status) %> است؛ برای تغییر اقلام، ابتدا دوره را از صفحه دوره‌ها باز کنید.</div></div>
+<% } %>
+
+<div class="card no-print">
+  <div class="card-header"><h3><%- icon('info') %> هزینه کارفرما و اطلاعات محاسبه</h3></div>
+  <div class="card-body">
+    <div class="dl">
+      <div class="item"><span class="label">بیمه سهم کارفرما</span><span class="value"><%= h.formatNumber(run.insurance_employer) %> ریال</span></div>
+      <div class="item"><span class="label">بیمه بیکاری</span><span class="value"><%= h.formatNumber(run.unemployment_insurance) %> ریال</span></div>
+      <div class="item"><span class="label">مبلغ مشمول بیمه</span><span class="value"><%= h.formatNumber(totals.insurable_total) %> ریال</span></div>
+      <div class="item"><span class="label">مبلغ مشمول مالیات</span><span class="value"><%= h.formatNumber(totals.taxable_total) %> ریال</span></div>
+      <div class="item"><span class="label">هزینه کل کارمند برای کارفرما</span><span class="value"><%= h.formatNumber(totals.employer_cost) %> ریال</span></div>
+      <div class="item"><span class="label">آخرین محاسبه</span><span class="value"><%= j.formatJalaaliDateTime(run.updated_at || run.created_at) %></span></div>
+    </div>
+    <details class="mt-2">
+      <summary class="link" style="cursor:pointer; font-size:.85rem">نمایش هزینه‌های کارفرما به تفکیک</summary>
+      <table class="table compact mt-2">
+        <thead><tr><th>عنوان</th><th>مبلغ (ریال)</th></tr></thead>
+        <tbody><% employer.forEach(function (e) { %><tr><td><%= h.escapeHtml(e.title) %></td><td class="num"><%= h.formatNumber(e.amount) %></td></tr><% }); %></tbody>
+      </table>
+    </details>
+  </div>
+</div>

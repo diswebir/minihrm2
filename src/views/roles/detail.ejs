@@ -1,0 +1,98 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('shield') %> نقش <%= h.escapeHtml(role.name) %></h1>
+    <p class="muted">سطح: <%= h.escapeHtml(role.scope || '—') %> — <%= h.pnum(users.length) %> کاربر با این نقش</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/roles"><%- icon('arrow-right', '', 16) %> فهرست نقش‌ها</a>
+    <button class="btn" type="button" id="selectAll">انتخاب همه</button>
+    <button class="btn" type="button" id="clearAll">پاک کردن همه</button>
+  </div>
+</div>
+
+<% if (role.is_locked && !user.is_superadmin) { %>
+  <div class="alert alert-warning"><%- icon('lock') %><div>این نقش سیستمی است و فقط مدیر سامانه می‌تواند آن را تغییر دهد.</div></div>
+<% } %>
+
+<form method="post" action="/roles/<%= role.id %>" data-guard>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('tag') %> مشخصات نقش</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">نام نقش</label><input type="text" name="name" value="<%= h.escapeHtml(role.name) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">سطح دسترسی (Scope)</label>
+          <select name="scope">
+            <% ['admin', 'hr', 'manager', 'employee', 'guard', 'candidate'].forEach(function (s) { %>
+              <option value="<%= s %>" <%= role.scope === s ? 'selected' : '' %>><%= s %></option>
+            <% }); %>
+          </select></div></div>
+        <div class="col-5"><div class="form-group"><label class="field-label">توضیح</label><input type="text" name="description" value="<%= h.escapeHtml(role.description || '') %>"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <% Object.keys(grouped).forEach(function (groupName) { %>
+    <div class="card">
+      <div class="card-header">
+        <h3><%- icon('folder') %> <%= h.escapeHtml(groupName) %></h3>
+        <div class="actions">
+          <label class="check"><input type="checkbox" data-group-toggle="<%= groupName %>" <%= grouped[groupName].every(function (p) { return p.granted; }) ? 'checked' : '' %>><span class="check-label small">انتخاب همه گروه</span></label>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-2" style="grid-template-columns:1fr 1fr 1fr">
+          <% grouped[groupName].forEach(function (p) { %>
+            <label class="check" data-group-item="<%= groupName %>">
+              <input type="checkbox" name="perms" value="<%= h.escapeHtml(p.key) %>" <%= p.granted ? 'checked' : '' %>>
+              <span class="check-label"><%= h.escapeHtml(p.title || p.key) %> <code dir="ltr" class="muted small"><%= h.escapeHtml(p.key) %></code></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+
+  <div class="sticky-actions">
+    <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> ذخیره دسترسی‌های نقش</button>
+    <a class="btn" href="/roles">انصراف</a>
+  </div>
+</form>
+
+<% if (users.length) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('users') %> کاربران این نقش</h3></div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table class="table compact">
+          <thead><tr><th>نام</th><th>نام کاربری</th><th>وضعیت</th><th></th></tr></thead>
+          <tbody>
+            <% users.forEach(function (u) { %>
+              <tr>
+                <td><%= h.escapeHtml(u.full_name) %></td>
+                <td dir="ltr"><%= h.escapeHtml(u.username) %></td>
+                <td><%- h.statusLabel(u.status) %></td>
+                <td class="ta-center"><a class="btn btn-icon btn-sm" href="/users/<%= u.id %>/edit"><%- icon('edit', '', 15) %></a></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<script>
+document.getElementById('selectAll').addEventListener('click', function () {
+  document.querySelectorAll('input[name=perms]').forEach(function (c) { c.checked = true; });
+});
+document.getElementById('clearAll').addEventListener('click', function () {
+  document.querySelectorAll('input[name=perms]').forEach(function (c) { c.checked = false; });
+});
+document.querySelectorAll('[data-group-toggle]').forEach(function (box) {
+  box.addEventListener('change', function () {
+    document.querySelectorAll('[data-group-item="' + box.dataset.groupToggle + '"] input').forEach(function (c) { c.checked = box.checked; });
+  });
+});
+</script>

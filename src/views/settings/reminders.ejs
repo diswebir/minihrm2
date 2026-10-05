@@ -1,0 +1,80 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('bell') %> یادآورها و سررسیدها</h1>
+    <p class="muted">بررسی خودکار قراردادها، مجوزها، وظایف، تسویه‌ها، حقوق پرداخت‌نشده، انبار و تولدها</p>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="/settings/reminders/run" style="display:inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-primary" type="submit"><%- icon('refresh', '', 16) %> اجرای بررسی و ارسال اعلان‌ها</button>
+    </form>
+    <a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <% var totalItems = items.reduce(function (s, i) { return s + i.count; }, 0); %>
+  <div class="kpi-card kpi-primary">
+    <span class="kpi-icon"><%- icon('list', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= h.pnum(items.length) %></span><span class="kpi-label">دسته یادآور فعال</span></span>
+  </div>
+  <div class="kpi-card <%= items.length ? 'kpi-warning' : 'kpi-success' %>">
+    <span class="kpi-icon"><%- icon('alert', '', 22) %></span>
+    <span class="kpi-body"><span class="kpi-value"><%= h.pnum(totalItems) %></span><span class="kpi-label">مورد نیازمند پیگیری</span></span>
+  </div>
+</div>
+
+<% if (!items.length) { %>
+  <div class="card">
+    <div class="card-body">
+      <div class="empty-state">
+        <%- icon('check-circle', 'icon-xl') %>
+        <h3>همه‌چیز مرتب است</h3>
+        <p class="muted">در حال حاضر موردی برای یادآوری وجود ندارد.</p>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<% items.forEach(function (it) { %>
+  <div class="card">
+    <div class="card-header">
+      <h3>
+        <span class="badge <%= it.level === 'danger' ? 'danger' : (it.level === 'info' ? 'info' : 'warning') %>"><%= h.pnum(it.count) %></span>
+        <%= h.escapeHtml(it.title) %>
+      </h3>
+      <a class="btn btn-sm" href="<%= it.link %>">مشاهده</a>
+    </div>
+    <div class="card-body tight">
+      <ul class="list-plain" style="margin:0;padding-inline-start:1.1rem">
+        <% it.items.forEach(function (line) { %><li style="padding:.2rem 0"><%= h.escapeHtml(line) %></li><% }); %>
+        <% if (it.count > it.items.length) { %><li class="muted">و <%= h.pnum(it.count - it.items.length) %> مورد دیگر…</li><% } %>
+      </ul>
+    </div>
+  </div>
+<% }); %>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('clock') %> اجرای خودکار با کرون</h3></div>
+  <div class="card-body">
+    <p class="muted small">
+      در cPanel بدون نیاز به SSH، از بخش <b>Cron Jobs</b> یک وظیفه روزانه بسازید که آدرس زیر را فراخوانی کند.
+      هر یادآور برای هر کاربر در یک روز فقط یک‌بار ساخته می‌شود.
+    </p>
+    <% if (cronToken) { %>
+      <label class="field-label">آدرس اجرای کرون</label>
+      <div class="link-box" dir="ltr" id="cronUrl"><%= base %>/settings/reminders/cron?token=<%= cronToken %></div>
+      <div class="btn-group mt-2">
+        <button class="btn btn-sm" type="button" data-copy="#cronUrl"><%- icon('copy', '', 15) %> کپی آدرس</button>
+        <form method="post" action="/settings/reminders/cron/rotate" style="display:inline" data-confirm="کلید امنیتی قبلی باطل می‌شود و باید آدرس کرون را به‌روزرسانی کنید. ادامه؟">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-sm" type="submit"><%- icon('refresh', '', 15) %> بازتولید کلید</button>
+        </form>
+        <a class="btn btn-sm" href="<%= base %>/settings/backup/cron?token=<%= cronToken %>" target="_blank"><%- icon('hard-drive', '', 15) %> آزمایش پشتیبان کرون</a>
+      </div>
+      <div class="field-help mt-2">دستور نمونه برای cPanel: <code dir="ltr">/usr/bin/curl -s "…" &gt; /dev/null</code></div>
+    <% } else { %>
+      <div class="alert alert-warning"><%- icon('alert') %><div>توکن کرون تنظیم نشده است. ابتدا در <a href="/settings/backup">تنظیمات پشتیبان‌گیری</a> توکن را بسازید.</div></div>
+    <% } %>
+  </div>
+</div>

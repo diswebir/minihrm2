@@ -1,0 +1,52 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('wallet') %> گزارش حقوق و دستمزد</h1>
+    <p class="muted">مقایسه دوره‌های حقوقی، جمع مزایا و کسور، مالیات و بیمه</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/reports"><%- icon('arrow-right', '', 16) %> همه گزارش‌ها</a>
+    <a class="btn" href="/payroll/periods"><%- icon('calendar', '', 16) %> دوره‌های حقوق</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('trending-up') %> روند جمع خالص پرداختی</h3></div>
+  <div class="card-body">
+    <div class="bars">
+      <% var maxNet = Math.max.apply(null, (periods || []).map(function (p) { return Number(p.total_net) || 0; }).concat([1])); %>
+      <% (periods || []).slice().reverse().forEach(function (p) { %>
+        <div class="bar-row">
+          <span class="bar-label"><%= h.escapeHtml(p.title || '') %></span>
+          <span class="bar-track"><span class="bar-fill bg-success" style="width:<%= Math.round((Number(p.total_net) || 0) / maxNet * 100) %>%"></span></span>
+          <span class="bar-value"><%= h.money(p.total_net, { suffix: false }) %></span>
+        </div>
+      <% }); %>
+      <% if (!periods || !periods.length) { %><p class="muted center">دوره حقوقی ثبت نشده است.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('list') %> جدول دوره‌ها</h3></div>
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>دوره</th><th>کارکنان</th><th>جمع مزایا</th><th>جمع کسور</th><th>خالص</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+          <% (periods || []).forEach(function (p) { %>
+            <tr>
+              <td><a class="link" href="/payroll/periods/<%= p.id %>"><%= h.escapeHtml(p.title || '') %></a></td>
+              <td class="num"><%= h.pnum(p.employee_count || 0) %></td>
+              <td class="num"><%= h.money(p.total_gross, { suffix: false }) %></td>
+              <td class="num"><%= h.money(p.total_deduction, { suffix: false }) %></td>
+              <td class="num"><b><%= h.money(p.total_net, { suffix: false }) %></b></td>
+              <td><%- h.statusLabel(p.status) %></td>
+              <td><a class="btn btn-sm" href="/payroll/periods/<%= p.id %>/export.csv"><%- icon('download', '', 14) %> CSV</a></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

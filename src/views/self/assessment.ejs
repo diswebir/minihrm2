@@ -1,0 +1,42 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('brain') %> آزمون‌های من</h1>
+    <p class="muted">آزمون‌های تخصیص‌داده‌شده به شما و وضعیت انجام آن‌ها</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/dashboard"><%- icon('home', '', 16) %> داشبورد</a>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <%- icon('info') %>
+  <div>نتیجه آزمون‌های شخصیت‌شناسی محرمانه است و تنها توسط کارشناسان منابع انسانی بررسی می‌شود.</div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>آزمون</th><th>تعداد سؤال</th><th>مدت</th><th>شروع</th><th>وضعیت</th><th class="ta-center">اقدام</th></tr></thead>
+        <tbody>
+          <% (list || []).forEach(function (a) {
+               var st = { pending: 'انجام نشده', in_progress: 'در حال انجام', completed: 'تکمیل‌شده', expired: 'منقضی' }[a.status] || a.status || '—';
+          %>
+            <tr>
+              <td><%= h.escapeHtml(a.test_name || 'آزمون') %></td>
+              <td class="num"><%= h.pnum(a.question_count || 28) %></td>
+              <td class="num"><%= a.duration_minutes ? h.pnum(a.duration_minutes) + ' دقیقه' : '—' %></td>
+              <td><%= a.started_at ? j.formatJalaaliDateTime(a.started_at) : '—' %></td>
+              <td><span class="badge <%= a.status === 'completed' ? 'success' : (a.status === 'in_progress' ? 'info' : 'warning') %>"><%= h.escapeHtml(st) %></span></td>
+              <td class="ta-center">
+                <% if (a.status === 'completed') { %><span class="muted small">ثبت شد</span>
+                <% } else { %><a class="btn btn-sm btn-primary" href="/apply/assessment/<%= a.token %>"><%- icon('play', '', 14) %> شروع آزمون</a><% } %>
+              </td>
+            </tr>
+          <% }); %>
+          <% if (!list || !list.length) { %><tr><td colspan="6" class="muted center">آزمونی برای شما ثبت نشده است.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

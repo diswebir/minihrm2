@@ -1,0 +1,68 @@
+<%- include('partials/head', { pageTitle: 'پیگیری وضعیت پرونده', subtitle: 'پیگیری درخواست استخدام', company: company, backUrl: '/apply' }) %>
+
+<div class="public-card" style="max-width:680px;margin:0 auto">
+  <div class="public-head">
+    <div style="flex:1">
+      <div style="font-weight:700"><%- icon('search', '', 18) %> پیگیری وضعیت درخواست</div>
+      <div class="muted small">کد پیگیری پرونده و شماره موبایل خود را وارد کنید.</div>
+    </div>
+  </div>
+  <div class="public-body-inner">
+    <form method="get" action="/apply/status">
+      <div class="form-row">
+        <div class="col-6"><div class="form-group"><label class="field-label">کد پیگیری</label>
+          <input type="text" name="code" dir="ltr" value="<%= h.escapeHtml(code || '') %>" placeholder="APP-..."></div></div>
+        <div class="col-6"><div class="form-group"><label class="field-label">شماره موبایل</label>
+          <input type="text" name="mobile" dir="ltr" inputmode="numeric" maxlength="11" value="<%= h.escapeHtml(mobile || '') %>" placeholder="09123456789"></div></div>
+        <div class="col-12"><button class="btn btn-primary" type="submit"><%- icon('search', '', 16) %> جست‌وجوی پرونده</button></div>
+      </div>
+    </form>
+
+    <% if (notFound) { %>
+      <div class="alert alert-warning"><%- icon('alert') %><div>پرونده‌ای با این مشخصات یافت نشد. لطفاً کد پیگیری و شماره موبایل را بررسی کنید.</div></div>
+    <% } %>
+
+    <% if (app) { %>
+      <div class="card" style="box-shadow:none">
+        <div class="card-header"><h3><%- icon('user') %> پرونده <%= h.escapeHtml(app.full_name) %></h3>
+          <div class="actions"><span class="badge info"><%= h.statusLabel(app.status) %></span></div>
+        </div>
+        <div class="card-body">
+          <div class="dl">
+            <div class="item"><span class="label">کد پیگیری</span><span class="value" dir="ltr"><%= h.escapeHtml(app.code || '') %></span></div>
+            <div class="item"><span class="label">موقعیت شغلی</span><span class="value"><%= h.escapeHtml(job ? job.title : '—') %></span></div>
+            <div class="item"><span class="label">تاریخ ثبت</span><span class="value"><%= j.formatJalaali(app.created_at) %></span></div>
+            <div class="item"><span class="label">پیشرفت فرم</span><span class="value"><%= h.pnum(app.form_progress || 0) %>٪</span></div>
+          </div>
+
+          <h4 class="mt-3" style="font-size:.92rem"><%- icon('steps', '', 16) %> مراحل فرآیند</h4>
+          <div class="progress-steps">
+            <% var curIdx = stages.findIndex(function (s) { return s.key === app.stage_key; }); %>
+            <% stages.forEach(function (s, i) { %>
+              <div class="step-dot <%= i < curIdx ? 'done' : (i === curIdx ? 'current' : '') %>">
+                <span class="dot"></span>
+                <span class="step-title"><%= h.escapeHtml(s.name) %></span>
+              </div>
+            <% }); %>
+          </div>
+
+          <% if (logs && logs.length) { %>
+            <h4 class="mt-3" style="font-size:.92rem">تاریخچه</h4>
+            <div class="timeline">
+              <% logs.forEach(function (l) { %>
+                <div class="timeline-item">
+                  <div class="title"><%= h.escapeHtml(l.to_stage || l.to_stage_key || '') %></div>
+                  <div class="time"><%= j.formatJalaaliDateTime(l.created_at) %></div>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+
+          <div class="alert alert-info mt-2"><%- icon('info') %><div>نتیجه ارزیابی‌های تخصصی و آزمون‌های شخصیت‌شناسی توسط منابع انسانی بررسی می‌شود و در صورت نیاز با شما تماس گرفته خواهد شد.</div></div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/foot', { company: company }) %>

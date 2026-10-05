@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | <%= (typeof appName !== 'undefined' && appName) ? appName : 'مینی HRM' %></title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card center">
+    <div style="font-size:3.6rem;font-weight:700;color:var(--primary);line-height:1"><%= code || 500 %></div>
+    <h1 class="mt-2"><%= title %></h1>
+    <p class="muted"><%= message %></p>
+    <% if (typeof stack !== 'undefined' && stack) { %>
+      <pre style="text-align:left;direction:ltr;background:var(--slate-100);padding:.8rem;border-radius:8px;font-size:.72rem;overflow:auto;max-height:260px"><%= stack %></pre>
+    <% } %>
+    <div class="btn-group mt-3" style="justify-content:center">
+      <a class="btn btn-primary" href="/">بازگشت به صفحه اصلی</a>
+      <button class="btn" type="button" onclick="history.back()">صفحه قبل</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

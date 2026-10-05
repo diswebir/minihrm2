@@ -1,0 +1,200 @@
+<%
+  var h = locals.h;
+  var groups = [];
+  (def.fields || []).forEach(function (f) {
+    var g = f.group || 'اطلاعات اصلی';
+    if (!groups.find(function (x) { return x.name === g; })) groups.push({ name: g, fields: [], icon: f.groupIcon || 'file-text' });
+    groups.find(function (x) { return x.name === g; }).fields.push(f);
+  });
+  function valOf(f) {
+    var v = row[f.name];
+    if (v === null || v === undefined) return '';
+    if (f.type === 'date' && f.jalali !== false && v) return j.formatJalaali(v);
+    if (f.type === 'datetime' && v) return j.formatJalaali(v);
+    if ((f.type === 'checkbox_group' || f.type === 'json_list') && v) {
+      var arr = h.jsonParse(v, null); return Array.isArray(arr) ? arr : String(v).split(',');
+    }
+    return v;
+  }
+  function hiddenWhen(f) {
+    if (!f.depends_on) return '';
+    return ' data-depends-on="' + f.depends_on + '" data-depends-value="' + h.escapeHtml(String(f.depends_value || '')) + '"';
+  }
+%>
+<form method="post" action="<%= isNew ? '/' + basePath : '/' + basePath + '/' + row.id %>" data-guard id="resourceForm">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card">
+    <div class="card-header">
+      <h3><%- icon(def.icon || 'edit') %> <%= isNew ? 'افزودن' : 'ویرایش' %> <%= h.escapeHtml(def.titleSingular || def.title) %></h3>
+      <div class="actions">
+        <a class="btn btn-sm btn-ghost" href="<%= isNew ? '/' + basePath : '/' + basePath + '/' + row.id %>"><%- icon('x', '', 15) %> انصراف</a>
+        <button class="btn btn-sm btn-primary" type="submit"><%- icon('save', '', 15) %> ذخیره</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <% if (Object.keys(errors || {}).length) { %>
+        <div class="alert alert-danger"><%- icon('alert') %>
+          <div>لطفاً خطاهای زیر را برطرف کنید:
+            <ul style="margin:.4rem 0 0; padding-right:1.1rem">
+              <% Object.entries(errors).forEach(function (kv) { %><li><%= h.escapeHtml(kv[1]) %></li><% }); %>
+            </ul>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (def.formHelp) { %>
+        <div class="help-block mb-2"><%- icon('info') %><div><%= def.formHelp %></div></div>
+      <% } %>
+
+      <% groups.forEach(function (group) { %>
+        <fieldset class="form-section">
+          <legend><%- icon(group.icon) %> <%= h.escapeHtml(group.name) %></legend>
+          <div class="form-row">
+            <% group.fields.forEach(function (f) { %>
+              <% if (f.type === 'hidden') { %>
+                <input type="hidden" name="<%= f.name %>" value="<%= h.escapeHtml(valOf(f)) %>">
+              <% } else if (f.type === 'static') { %>
+                <div class="col-<%= f.col || 12 %>">
+                  <div class="dl" style="grid-template-columns:1fr">
+                    <div><dt><%= h.escapeHtml(f.label) %></dt><dd><%= h.escapeHtml(String(valOf(f) || '—')) %></dd></div>
+                  </div>
+                </div>
+              <% } else { %>
+                <div class="col-<%= f.col || (f.type === 'textarea' ? 12 : 6) %>"<%= hiddenWhen(f) %>>
+                  <div class="form-group mb-0">
+                    <label class="field-label" for="f_<%= f.name %>">
+                      <%= h.escapeHtml(f.label) %><% if (f.required) { %><span class="req" title="الزامی">*</span><% } %>
+                    </label>
+
+                    <% if (f.type === 'textarea') { %>
+                      <textarea id="f_<%= f.name %>" name="<%= f.name %>" rows="<%= f.rows || 3 %>"
+                        placeholder="<%= h.escapeHtml(f.placeholder || '') %>" <%= f.required ? 'required' : '' %>
+                        class="<%= errors[f.name] ? 'invalid' : '' %>"><%= h.escapeHtml(valOf(f)) %></textarea>
+
+                    <% } else if (f.type === 'money' || f.type === 'number' || f.type === 'percent') { %>
+                      <div class="input-suffix">
+                        <input type="text" id="f_<%= f.name %>" name="<%= f.name %>" value="<%= h.escapeHtml(valOf(f)) %>"
+                          <%= f.type === 'money' ? 'data-money' : '' %> inputmode="numeric"
+                          placeholder="<%= h.escapeHtml(f.placeholder || (f.type === 'money' ? '۰' : '')) %>"
+                          class="<%= errors[f.name] ? 'invalid' : '' %>" <%= f.required ? 'required' : '' %>>
+                        <span class="suffix"><%= f.type === 'money' ? (f.unit || 'ریال') : (f.type === 'percent' ? '٪' : (f.unit || '')) %></span>
+                      </div>
+
+                    <% } else if (f.type === 'select' || f.type === 'lookup') { %>
+                      <select id="f_<%= f.name %>" name="<%= f.name %>" class="<%= errors[f.name] ? 'invalid' : '' %>" <%= f.required ? 'required' : '' %>>
+                        <option value=""><%= h.escapeHtml(f.placeholder || 'انتخاب کنید…') %></option>
+                        <% (f.type === 'lookup' ? (lookups[f.name] || []) : (f.options || [])).forEach(function (o) { %>
+                          <% var ov = o.value !== undefined ? o.value : o; var ol = o.label !== undefined ? o.label : o; %>
+                          <option value="<%= ov %>" <%= String(valOf(f)) === String(ov) ? 'selected' : '' %>><%= h.escapeHtml(String(ol)) %></option>
+                        <% }); %>
+                      </select>
+
+                    <% } else if (f.type === 'radio') { %>
+                      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        <% (f.options || []).forEach(function (o) { %>
+                          <% var ov = o.value !== undefined ? o.value : o; var ol = o.label !== undefined ? o.label : o; %>
+                          <label class="check" style="min-width:120px">
+                            <input type="radio" name="<%= f.name %>" value="<%= ov %>" <%= String(valOf(f)) === String(ov) ? 'checked' : '' %>>
+                            <span class="check-label"><%= h.escapeHtml(String(ol)) %></span>
+                          </label>
+                        <% }); %>
+                      </div>
+
+                    <% } else if (f.type === 'checkbox') { %>
+                      <label class="check">
+                        <input type="checkbox" id="f_<%= f.name %>" name="<%= f.name %>" value="1" <%= Number(valOf(f)) ? 'checked' : '' %>>
+                        <span class="check-label"><%= h.escapeHtml(f.checkLabel || f.help_text || 'فعال') %></span>
+                      </label>
+
+                    <% } else if (f.type === 'checkbox_group' || f.type === 'tags') { %>
+                      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        <% (f.options || []).forEach(function (o) { %>
+                          <% var ov = o.value !== undefined ? o.value : o; var ol = o.label !== undefined ? o.label : o; %>
+                          <% var current = valOf(f); var isChecked = Array.isArray(current) ? current.includes(String(ov)) : String(current).split(',').includes(String(ov)); %>
+                          <label class="check">
+                            <input type="checkbox" name="<%= f.name %>" value="<%= ov %>" <%= isChecked ? 'checked' : '' %>>
+                            <span class="check-label"><%= h.escapeHtml(String(ol)) %></span>
+                          </label>
+                        <% }); %>
+                      </div>
+
+                    <% } else if (f.type === 'date') { %>
+                      <input type="text" id="f_<%= f.name %>" name="<%= f.name %>" value="<%= h.escapeHtml(valOf(f)) %>"
+                        data-jalali data-iso="<%= row[f.name] ? String(row[f.name]).slice(0, 10) : '' %>" autocomplete="off"
+                        class="<%= errors[f.name] ? 'invalid' : '' %>" <%= f.required ? 'required' : '' %>>
+
+                    <% } else if (f.type === 'time') { %>
+                      <input type="time" id="f_<%= f.name %>" name="<%= f.name %>" value="<%= h.escapeHtml(String(valOf(f)).slice(0, 5)) %>" class="<%= errors[f.name] ? 'invalid' : '' %>">
+
+                    <% } else if (f.type === 'datetime') { %>
+                      <input type="text" id="f_<%= f.name %>" name="<%= f.name %>" value="<%= h.escapeHtml(valOf(f)) %>" data-jalali autocomplete="off">
+
+                    <% } else if (f.type === 'file') { %>
+                      <input type="hidden" name="<%= f.name %>" value="<%= h.escapeHtml(valOf(f)) %>">
+                      <input type="file" name="<%= f.name %>_file" id="f_<%= f.name %>" accept="<%= f.accept || '*/*' %>" data-upload="<%= f.name %>">
+                      <% if (row[f.name]) { %>
+                        <div class="doc-item mt-1">
+                          <%- icon('file') %>
+                          <a href="/files/<%= encodeURIComponent(row[f.name]) %>" target="_blank">فایل فعلی</a>
+                          <span class="muted small" style="margin-right:auto">برای تغییر، فایل جدید انتخاب کنید</span>
+                        </div>
+                      <% } %>
+
+                    <% } else if (f.type === 'password') { %>
+                      <input type="password" id="f_<%= f.name %>" name="<%= f.name %>" value="" autocomplete="new-password"
+                        placeholder="<%= f.placeholder || 'برای تغییر، مقدار جدید وارد کنید' %>">
+
+                    <% } else { %>
+                      <input type="<%= f.type === 'code' ? 'text' : (f.inputType || 'text') %>" id="f_<%= f.name %>" name="<%= f.name %>"
+                        value="<%= h.escapeHtml(valOf(f)) %>" placeholder="<%= h.escapeHtml(f.placeholder || '') %>"
+                        class="<%= errors[f.name] ? 'invalid' : '' %>" <%= f.required ? 'required' : '' %>
+                        <%= f.maxlength ? 'maxlength="' + f.maxlength + '"' : '' %> <%= f.readonly ? 'readonly' : '' %>>
+                    <% } %>
+
+                    <% if (errors[f.name]) { %><span class="field-error"><%- icon('alert-circle', '', 14) %> <%= h.escapeHtml(errors[f.name]) %></span><% } %>
+                    <% if (f.help_text) { %><span class="field-help"><%= h.escapeHtml(f.help_text) %></span><% } %>
+                  </div>
+                </div>
+              <% } %>
+            <% }); %>
+          </div>
+        </fieldset>
+      <% }); %>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> <%= isNew ? 'ثبت' : 'ذخیره تغییرات' %></button>
+      <a class="btn" href="<%= isNew ? '/' + basePath : '/' + basePath + '/' + row.id %>">انصراف</a>
+      <% if (!isNew && can && can((def.perm || {}).delete)) { %>
+        <form method="post" action="/<%= basePath %>/<%= row.id %>/delete" style="margin-right:auto" data-confirm="آیا از حذف این رکورد اطمینان دارید؟">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-danger" type="submit"><%- icon('trash', '', 16) %> حذف</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</form>
+
+<script>
+  // فیلدهای وابسته: نمایش/پنهان‌سازی بر اساس مقدار فیلد مرجع
+  document.addEventListener('DOMContentLoaded', function () {
+    var deps = document.querySelectorAll('[data-depends-on]');
+    function sync() {
+      deps.forEach(function (el) {
+        var name = el.dataset.dependsOn;
+        var wanted = el.dataset.dependsValue;
+        var inputs = document.querySelectorAll('[name="' + name + '"]');
+        var current = '';
+        inputs.forEach(function (i) {
+          if ((i.type === 'radio' || i.type === 'checkbox') && !i.checked) return;
+          if (i.type === 'radio' || i.type === 'checkbox') current = i.value;
+          else current = i.value;
+        });
+        el.style.display = (current === wanted || (wanted === '' && current)) ? '' : 'none';
+      });
+    }
+    document.addEventListener('change', sync);
+    document.addEventListener('input', sync);
+    sync();
+  });
+</script>

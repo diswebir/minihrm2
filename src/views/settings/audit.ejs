@@ -1,0 +1,56 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('activity') %> لاگ عملیات</h1>
+    <p class="muted">همهٔ ایجاد، ویرایش، حذف، ورود و خروج کاربران در این بخش ثبت و قابل پیگیری است. مجموع رکوردها: <%= h.pnum(meta.total) %></p>
+  </div>
+  <div class="page-actions"><a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a></div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="get" action="/settings/audit" class="filter-bar">
+      <input type="search" name="q" value="<%= h.escapeHtml(query.q || '') %>" placeholder="عنوان، موجودیت یا نام کاربر">
+      <select name="module">
+        <option value="">همه ماژول‌ها</option>
+        <% ['core', 'employees', 'recruitment', 'assessment', 'onboarding', 'training', 'attendance', 'payroll', 'offboarding', 'transport', 'kitchen', 'security', 'welfare', 'licensing', 'knowledge', 'ip', 'shareholders', 'corporate', 'legal', 'assets', 'requests', 'announcements', 'performance', 'messaging'].forEach(function (m) { %>
+          <option value="<%= m %>" <%= query.module === m ? 'selected' : '' %>><%= m %></option>
+        <% }); %>
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit"><%- icon('search', '', 15) %> فیلتر</button>
+      <a class="btn btn-sm" href="/settings/audit">پاک کردن</a>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body tight">
+    <div class="table-wrap">
+      <table class="table compact">
+        <thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>ماژول</th><th>موجودیت</th><th>شرح</th><th>IP</th></tr></thead>
+        <tbody>
+          <% list.forEach(function (l) { %>
+            <tr>
+              <td class="nowrap small"><%= j.formatJalaaliDateTime(l.created_at) %></td>
+              <td class="small"><%= h.escapeHtml(l.user_name || l.user_label || 'سیستم') %></td>
+              <td><span class="badge <%= l.action === 'delete' ? 'danger' : (l.action === 'create' ? 'success' : 'info') %>"><%= h.actionLabel ? h.actionLabel(l.action) : l.action %></span></td>
+              <td class="small" dir="ltr"><%= h.escapeHtml(l.module || '') %></td>
+              <td class="small" dir="ltr"><%= h.escapeHtml(l.entity || '') %><%= l.entity_id ? '#' + h.pnum(l.entity_id) : '' %></td>
+              <td class="small"><%= h.escapeHtml(l.title || '') %></td>
+              <td class="small" dir="ltr"><%= h.escapeHtml(l.ip || '') %></td>
+            </tr>
+          <% }); %>
+          <% if (!list.length) { %><tr><td colspan="7" class="muted center">رکوردی یافت نشد.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (meta.pages > 1) { %>
+      <div class="pagination">
+        <% var start = Math.max(1, meta.page - 3), end = Math.min(meta.pages, meta.page + 3); %>
+        <% for (var p = start; p <= end; p++) { %>
+          <a class="<%= p === meta.page ? 'active' : '' %>" href="/settings/audit?page=<%= p %><%= query.q ? '&q=' + encodeURIComponent(query.q) : '' %>"><%= h.pnum(p) %></a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</div>

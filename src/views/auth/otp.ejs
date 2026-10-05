@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> | <%= appName %></title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-logo">م</div></div>
+    <h1>کد تأیید را وارد کنید</h1>
+    <p class="sub">کد یک‌بارمصرف به شماره <b dir="ltr"><%= h.escapeHtml(mobile) %></b> ارسال شد.</p>
+
+    <% if (error) { %><div class="alert alert-danger"><%- icon('alert') %><div><%= error %></div></div><% } %>
+    <% if (code) { %>
+      <div class="alert alert-warning"><%- icon('info') %><div>
+        حالت آزمایشی سامانه فعال است (سرویس پیامک تنظیم نشده). کد شما: <b dir="ltr" style="font-size:1.1rem"><%= h.pnum(code) %></b>
+      </div></div>
+    <% } %>
+
+    <form method="post" action="<%= action %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="mobile" value="<%= h.escapeHtml(mobile) %>">
+      <input type="hidden" name="next" value="<%= next %>">
+      <input type="hidden" name="code" id="otpValue">
+
+      <div class="otp-boxes">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم اول">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم دوم">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم سوم">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم چهارم">
+        <input type="text" inputmode="numeric" maxlength="1" aria-label="رقم پنجم">
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" type="submit"><%- icon('check-circle', '', 18) %> تأیید و ورود</button>
+    </form>
+
+    <form method="post" action="/login/otp/request" class="mt-2 center">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="mobile" value="<%= h.escapeHtml(mobile) %>">
+      <button class="btn btn-ghost btn-sm" type="submit" id="resendBtn" data-wait="60">ارسال مجدد کد</button>
+    </form>
+
+    <div class="center mt-3"><a class="small" href="<%= backUrl %>">بازگشت</a></div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+</body>
+</html>

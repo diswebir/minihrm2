@@ -1,0 +1,75 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('grid') %> مدیریت ماژول‌ها</h1>
+    <p class="muted">هر ماژول را می‌توانید جداگانه فعال یا غیرفعال کنید؛ منوی مربوطه و دسترسی‌های ماژول در همان لحظه در سطح سامانه اعمال می‌شود.</p>
+  </div>
+  <div class="page-actions"><a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a></div>
+</div>
+
+<div class="alert alert-info">
+  <%- icon('info') %>
+  <div>ماژول وابسته، پیش از خاموش شدن ماژول پایه بررسی می‌شود؛ برای نمونه «حقوق و دستمزد» به «حضور و غیاب» و «کارکنان» وابسته است. همه تغییرات در «لاگ عملیات» ثبت می‌شود.</div>
+</div>
+
+<% Object.keys(grouped).forEach(function (cat) { %>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('folder') %> <%= h.escapeHtml(cat) %></h3>
+      <div class="actions muted small">
+        فعال: <%= h.pnum(grouped[cat].filter(function (m) { return m.enabled; }).length) %> از <%= h.pnum(grouped[cat].length) %>
+      </div>
+    </div>
+    <div class="card-body tight">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th style="width:44px"></th><th>ماژول</th><th>توضیح</th><th style="width:110px">دسترسی‌ها</th><th style="width:120px">وضعیت</th><th style="width:120px">تغییر</th></tr></thead>
+          <tbody>
+            <% grouped[cat].forEach(function (m) { %>
+              <tr>
+                <td><span class="icon-box"><%- icon(m.icon || 'grid', '', 17) %></span></td>
+                <td>
+                  <div class="cell-main"><%= h.escapeHtml(m.name) %></div>
+                  <div class="cell-sub" dir="ltr"><%= h.escapeHtml(m.key) %><% if (m.core) { %> — سیستمی<% } %></div>
+                </td>
+                <td class="small muted">
+                  <%= h.escapeHtml(m.description || '') %>
+                  <% if (m.deps && m.deps.length) { %><div>وابسته به: <%= m.deps.map(function (d) { return h.escapeHtml(d); }).join('، ') %></div><% } %>
+                  <% if (m.dependents && m.dependents.length) { %><div>ماژول‌های وابسته: <%= m.dependents.map(function (d) { return h.escapeHtml(d); }).join('، ') %></div><% } %>
+                </td>
+                <td class="num"><%= h.pnum(m.permsCount || 0) %></td>
+                <td>
+                  <span class="badge <%= m.enabled ? 'success' : 'muted' %>" id="st-<%= m.key %>"><%= m.enabled ? 'فعال' : 'غیرفعال' %></span>
+                </td>
+                <td>
+                  <button class="btn btn-sm <%= m.enabled ? 'btn-danger' : 'btn-success' %>" type="button"
+                          data-toggle-module="<%= m.key %>" data-enabled="<%= m.enabled ? '1' : '0' %>"
+                          <%= m.core ? 'disabled title="ماژول سیستمی قابل غیرفعال‌سازی نیست"' : '' %>>
+                    <%= m.enabled ? 'غیرفعال کن' : 'فعال کن' %>
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% }); %>
+
+<script>
+document.querySelectorAll('[data-toggle-module]').forEach(function (btn) {
+  btn.addEventListener('click', async function () {
+    var key = btn.dataset.toggleModule;
+    var enabled = btn.dataset.enabled === '1';
+    var question = enabled
+      ? 'ماژول «' + key + '» غیرفعال شود؟ منو و دسترسی‌های آن در کل سامانه پنهان می‌شود.'
+      : 'ماژول «' + key + '» فعال شود؟';
+    if (!HRM.ask(question)) return;
+    btn.disabled = true;
+    try {
+      var res = await HRM.post('/settings/modules/' + key + '/toggle', { enabled: enabled ? '0' : '1' });
+      HRM.toast('success', res.message || 'ذخیره شد');
+      setTimeout(function () { location.reload(); }, 600);
+    } catch (e) { HRM.toast('danger', e.message); btn.disabled = false; }
+  });
+});
+</script>

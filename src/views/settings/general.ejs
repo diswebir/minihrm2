@@ -1,0 +1,82 @@
+<%
+  var c = (cfg && cfg.company) || {};
+  var v = function (k, d) { return all[k] === undefined ? (d || '') : all[k]; };
+  var on = function (k) { return String(v(k, '0')) === '1' || v(k, '') === 'true'; };
+%>
+<div class="page-head">
+  <div>
+    <h1><%- icon('sliders') %> تنظیمات عمومی</h1>
+    <p class="muted">نام و هویت سامانه، اطلاعات شرکت، قواعد جذب، حضور و رفاهیات</p>
+  </div>
+  <div class="page-actions"><a class="btn" href="/settings"><%- icon('arrow-right', '', 16) %> بازگشت</a></div>
+</div>
+
+<form method="post" action="/settings/general" data-guard>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('tag') %> هویت سامانه</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">نام سامانه</label><input type="text" name="app_name" value="<%= h.escapeHtml(v('app.name', 'مینی HRM')) %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">شعار / توضیح کوتاه</label><input type="text" name="app_tagline" value="<%= h.escapeHtml(v('app.tagline', '')) %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">رنگ اصلی</label>
+          <input type="color" name="app_primary_color" value="<%= h.escapeHtml(v('app.primary_color', '#2563eb')) %>"></div></div>
+        <div class="col-6"><div class="form-group"><label class="field-label">متن پاورقی</label><input type="text" name="app_footer_text" value="<%= h.escapeHtml(v('app.footer_text', '')) %>"></div></div>
+        <div class="col-6"><div class="form-group"><label class="field-label">پیام صفحه ورود</label><input type="text" name="app_login_notice" value="<%= h.escapeHtml(v('app.login_notice', '')) %>"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('building') %> اطلاعات شرکت (روی فیش حقوقی و نامه‌ها چاپ می‌شود)</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">نام شرکت</label><input type="text" name="company_name" value="<%= h.escapeHtml(c.name || '') %>" required></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">نام حقوقی کامل</label><input type="text" name="company_legal_name" value="<%= h.escapeHtml(c.legalName || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">شناسه/کد ملی شرکت</label><input type="text" name="company_national_id" dir="ltr" value="<%= h.escapeHtml(c.nationalId || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">شماره ثبت</label><input type="text" name="company_registration_no" dir="ltr" value="<%= h.escapeHtml(c.registrationNo || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">کد اقتصادی</label><input type="text" name="company_economic_code" dir="ltr" value="<%= h.escapeHtml(c.economicCode || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">تلفن</label><input type="text" name="company_phone" dir="ltr" value="<%= h.escapeHtml(c.phone || '') %>"></div></div>
+        <div class="col-8"><div class="form-group"><label class="field-label">نشانی</label><input type="text" name="company_address" value="<%= h.escapeHtml(c.address || '') %>"></div></div>
+        <div class="col-4"><div class="form-group"><label class="field-label">ایمیل</label><input type="text" name="company_email" dir="ltr" value="<%= h.escapeHtml(c.email || '') %>"></div></div>
+        <div class="col-12">
+          <label class="check"><input type="checkbox" name="company_knowledge_based" value="on" <%= c.knowledgeBased ? 'checked' : '' %>><span class="check-label">شرکت دانش‌بنیان است (برای ماژول دانش‌بنیان و معافیت‌ها)</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('user-plus') %> قواعد جذب و استخدام</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-4"><div class="form-group"><label class="field-label">اعتبار پیش‌فرض لینک دعوت (روز)</label>
+          <input type="text" name="recruitment_invite_ttl_days" data-numeric value="<%= h.escapeHtml(v('recruitment.invite_ttl_days', 7)) %>"></div></div>
+        <div class="col-8">
+          <label class="check"><input type="checkbox" name="recruitment_require_mbti_by_default" value="on" <%= on('recruitment.require_mbti_by_default') ? 'checked' : '' %>><span class="check-label">آزمون شخصیت‌شناسی به‌صورت پیش‌فرض برای داوطلبان فعال باشد</span></label>
+          <label class="check"><input type="checkbox" name="assessment_hide_result_from_candidate" value="on" <%= on('assessment.hide_result_from_candidate') !== false ? 'checked' : '' %> disabled><span class="check-label">نتیجه آزمون هیچ‌گاه به داوطلب نشان داده نشود (سیاست سامانه — غیرقابل تغییر)</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3><%- icon('clock') %> حضور، حقوق و رفاهیات</h3></div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="col-3"><div class="form-group"><label class="field-label">ساعت کاری روزانه</label><input type="text" name="attendance_work_hours_per_day" data-numeric value="<%= h.escapeHtml(v('attendance.work_hours_per_day', 8)) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">ضریب اضافه‌کاری</label><input type="text" name="payroll_overtime_rate" dir="ltr" value="<%= h.escapeHtml(v('payroll.overtime_rate', '1.4')) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">ضریب تعطیل‌کاری</label><input type="text" name="payroll_holiday_overtime_rate" dir="ltr" value="<%= h.escapeHtml(v('payroll.holiday_overtime_rate', '2')) %>"></div></div>
+        <div class="col-3"><div class="form-group"><label class="field-label">ضریب شب‌کاری</label><input type="text" name="payroll_night_rate" dir="ltr" value="<%= h.escapeHtml(v('payroll.night_rate', '1.35')) %>"></div></div>
+        <div class="col-6"><label class="check"><input type="checkbox" name="transport_require_approval" value="on" <%= on('transport.require_approval') ? 'checked' : '' %>><span class="check-label">تخصیص سرویس ایاب و ذهاب نیازمند تأیید منابع انسانی است</span></label></div>
+        <div class="col-6"><label class="check"><input type="checkbox" name="kitchen_require_reservation" value="on" <%= on('kitchen.require_reservation') ? 'checked' : '' %>><span class="check-label">رزرو غذا برای استفاده از سالن غذا الزامی است</span></label></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sticky-actions">
+    <button class="btn btn-primary" type="submit"><%- icon('save', '', 16) %> ذخیره تنظیمات</button>
+    <a class="btn" href="/settings">انصراف</a>
+  </div>
+</form>

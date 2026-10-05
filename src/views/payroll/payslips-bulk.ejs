@@ -1,0 +1,78 @@
+<%
+  var months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+  var periodLabel = period.title || (period.month ? months[period.month - 1] + ' ' + period.year : '');
+%>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    body { background: #f1f5f9; padding: 1rem }
+    .payslip { box-shadow: 0 2px 12px rgba(15,23,42,.08); border-radius: 10px; margin-bottom: 1.2rem }
+    .toolbar { max-width: 860px; margin: 0 auto .8rem; display: flex; gap: .5rem; justify-content: flex-end }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <a class="btn" href="/payroll/periods/<%= period.id %>">بازگشت به دوره</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()">چاپ همه (<%= h.pnum(runs.length) %> فیش)</button>
+  </div>
+
+  <% runs.forEach(function (run) { %>
+    <%
+      var snap = helpers.jsonParse(run.snapshot, {}) || {};
+      var earnings = snap.earnings || [];
+      var deductions = snap.deductions || [];
+      var emp = employees[run.id] || {};
+      var maxRows = Math.max(earnings.length, deductions.length);
+    %>
+    <div class="payslip">
+      <div class="payslip-head">
+        <div style="flex:1">
+          <div class="payslip-title"><%= h.escapeHtml(company.name || 'شرکت') %></div>
+          <div style="font-size:.75rem; color:#6b7280"><%= h.escapeHtml(company.address || '') %></div>
+        </div>
+        <div style="text-align:left">
+          <div class="payslip-title">فیش حقوقی</div>
+          <div style="font-size:.75rem; color:#6b7280">دوره: <%= h.escapeHtml(periodLabel) %></div>
+        </div>
+      </div>
+
+      <div class="payslip-meta">
+        <div><b>نام:</b> <%= h.escapeHtml(run.employee_name || '') %></div>
+        <div><b>کد پرسنلی:</b> <span dir="ltr"><%= h.escapeHtml(run.personnel_code || '') %></span></div>
+        <div><b>کد ملی:</b> <span dir="ltr"><%= h.pnum(emp.national_id || '') %></span></div>
+        <div><b>واحد:</b> <%= h.escapeHtml(deps[emp.department_id] || '—') %></div>
+        <div><b>روز کارکرد / بیمه:</b> <%= h.pnum(run.days_worked || 0) %> / <%= h.pnum(run.days_insurance || 0) %></div>
+        <div><b>اضافه‌کاری:</b> <%= h.pnum(run.overtime_hours || 0) %> ساعت</div>
+      </div>
+
+      <div class="payslip-cols">
+        <table>
+          <thead><tr><th>مزایا</th><th style="width:110px">مبلغ (ریال)</th></tr></thead>
+          <tbody>
+            <% earnings.forEach(function (e) { %><tr><td><%= h.escapeHtml(e.title) %></td><td style="text-align:left"><%= h.formatNumber(e.amount) %></td></tr><% }); %>
+            <% for (var i = earnings.length; i < maxRows; i++) { %><tr><td>&nbsp;</td><td></td></tr><% } %>
+          </tbody>
+          <tfoot><tr><th>جمع مزایا</th><th style="text-align:left"><%= h.formatNumber(run.total_earnings) %></th></tr></tfoot>
+        </table>
+        <table>
+          <thead><tr><th>کسور</th><th style="width:110px">مبلغ (ریال)</th></tr></thead>
+          <tbody>
+            <% deductions.forEach(function (d) { %><tr><td><%= h.escapeHtml(d.title) %></td><td style="text-align:left"><%= h.formatNumber(d.amount) %></td></tr><% }); %>
+            <% for (var k = deductions.length; k < maxRows; k++) { %><tr><td>&nbsp;</td><td></td></tr><% } %>
+          </tbody>
+          <tfoot><tr><th>جمع کسور</th><th style="text-align:left"><%= h.formatNumber(run.total_deductions) %></th></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="net-box"><span>خالص پرداختی</span><span><%= h.formatNumber(run.net) %> ریال</span></div>
+      <div class="confidential">تولید سیستمی — امور مالی <%= h.escapeHtml(company.name || '') %></div>
+    </div>
+  <% }); %>
+
+  <% if (!runs.length) { %><div class="payslip center muted">فیشی برای این دوره محاسبه نشده است.</div><% } %>
+</body>
+</html>

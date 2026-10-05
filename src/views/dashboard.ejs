@@ -1,0 +1,134 @@
+<%
+  var data = locals.data || {};
+%>
+<div class="page-head">
+  <div>
+    <h1><%- icon('home') %> داشبورد <span class="muted" style="font-size:.85rem">— <%= h.escapeHtml(user ? user.role_name || '' : '') %></span></h1>
+    <p class="muted"><%= h.formatJalaaliLong ? h.formatJalaaliLong(new Date()) : '' %> — خوش آمدید <%= h.escapeHtml(user ? user.full_name : '') %></p>
+  </div>
+  <div class="page-actions">
+    <% (data.quick || []).slice(0, 3).forEach(function (q) { %>
+      <a class="btn btn-primary" href="<%= q.url %>"><%- icon(q.icon || 'plus', '', 16) %> <%= h.escapeHtml(q.label) %></a>
+    <% }); %>
+  </div>
+</div>
+
+<% if (data.alerts && data.alerts.length) { %>
+  <% data.alerts.forEach(function (a) { %>
+    <div class="alert alert-<%= a.type || 'warning' %>"><%- icon('alert') %><div><%= a.text %>
+      <% if (a.url) { %> <a class="link" href="<%= a.url %>">مشاهده</a><% } %></div></div>
+  <% }); %>
+<% } %>
+
+<div class="kpi-grid">
+  <% (data.kpis || []).forEach(function (k) { var tag = k.url ? 'a' : 'div'; %>
+    <<%= tag %><%= k.url ? ' href="' + k.url + '"' : '' %> class="kpi-card kpi-<%= k.color %>">
+      <span class="kpi-icon"><%- icon(k.icon, '', 22) %></span>
+      <span class="kpi-body">
+        <span class="kpi-value"><%= k.money ? (Number(k.value) ? h.money(k.value) : '—') : h.pnum(k.value) %></span>
+        <span class="kpi-label"><%= h.escapeHtml(k.label) %></span>
+      </span>
+    </<%= tag %>>
+  <% }); %>
+</div>
+
+<div class="grid-2">
+  <div>
+    <% if (data.bars && data.bars.length) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('chart') %> قیف استخدام</h3></div>
+        <div class="card-body">
+          <div class="bars">
+            <% var maxBar = Math.max.apply(null, data.bars.map(function (b) { return Number(b.value) || 0; }).concat([1])); %>
+            <% data.bars.forEach(function (b) { %>
+              <div class="bar-row">
+                <span class="bar-label"><%= h.escapeHtml(b.label) %></span>
+                <span class="bar-track"><span class="bar-fill bg-<%= b.color || 'primary' %>" style="width:<%= Math.round((Number(b.value) || 0) / maxBar * 100) %>%"></span></span>
+                <span class="bar-value"><%= h.pnum(b.value || 0) %></span>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <% (data.lists || []).forEach(function (list) { %>
+      <div class="card">
+        <div class="card-header">
+          <h3><%- icon(list.icon || 'list') %> <%= h.escapeHtml(list.title) %></h3>
+          <% if (list.url) { %><div class="actions"><a class="btn btn-sm" href="<%= list.url %>">مشاهده همه</a></div><% } %>
+        </div>
+        <div class="card-body tight">
+          <% if (!list.items || !list.items.length) { %>
+            <div class="empty-state" style="padding:1.4rem"><%- icon('inbox', '', 34) %><p class="muted">موردی برای نمایش نیست.</p></div>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table compact">
+                <thead><tr><% (list.columns || []).forEach(function (c) { %><th><%= h.escapeHtml(c) %></th><% }); %></tr></thead>
+                <tbody>
+                  <% list.items.forEach(function (it) { %>
+                    <tr>
+                      <% (it.cells || []).forEach(function (cell, i) { %>
+                        <td>
+                          <% if (i === 0 && it.url) { %><a class="link" href="<%= it.url %>"><%= cell %></a>
+                          <% } else { %><%= cell %><% } %>
+                        </td>
+                      <% }); %>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+
+  <div>
+    <% if (data.quick && data.quick.length) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('zap') %> دسترسی سریع</h3></div>
+        <div class="card-body">
+          <div class="quick-grid">
+            <% data.quick.forEach(function (q) { %>
+              <a class="quick-item" href="<%= q.url %>"><%- icon(q.icon || 'circle', '', 20) %><span><%= h.escapeHtml(q.label) %></span></a>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header"><h3><%- icon('activity') %> اطلاع‌رسانی‌های من</h3>
+        <div class="actions"><a class="btn btn-sm" href="/notifications">همه</a></div>
+      </div>
+      <div class="card-body">
+        <% var notifs = locals.notifications || []; %>
+        <% if (!notifs.length) { %><p class="muted center">اطلاعیه جدیدی ندارید.</p><% } %>
+        <% notifs.slice(0, 6).forEach(function (n) { %>
+          <div class="notif-item">
+            <%- icon(n.level === 'danger' ? 'alert' : 'bell', '', 16) %>
+            <div style="flex:1">
+              <div><% if (n.link) { %><a class="link" href="<%= n.link %>"><%= h.escapeHtml(n.title) %></a><% } else { %><%= h.escapeHtml(n.title) %><% } %></div>
+              <div class="muted small"><%= h.relativeTime ? h.relativeTime(n.created_at) : '' %></div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <% if (typeof companyStats !== 'undefined' && companyStats) { %>
+      <div class="card">
+        <div class="card-header"><h3><%- icon('building') %> وضعیت سازمان</h3></div>
+        <div class="card-body">
+          <ul class="list-plain">
+            <% Object.keys(companyStats).forEach(function (k) { %>
+              <li><%- icon('chevron-left', '', 15) %><div style="flex:1"><%= h.escapeHtml(k) %></div><b><%= h.pnum(companyStats[k]) %></b></li>
+            <% }); %>
+          </ul>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</div>

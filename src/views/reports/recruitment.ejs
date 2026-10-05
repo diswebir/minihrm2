@@ -1,0 +1,72 @@
+<div class="page-head">
+  <div>
+    <h1><%- icon('user-plus') %> گزارش جذب و استخدام</h1>
+    <p class="muted">قیف استخدام، عملکرد موقعیت‌های شغلی، منابع جذب و توزیع تیپ‌های شخصیتی (محرمانه)</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn" href="/reports"><%- icon('arrow-right', '', 16) %> همه گزارش‌ها</a>
+    <a class="btn" href="/recruitment/applications"><%- icon('users', '', 16) %> فهرست داوطلبان</a>
+    <button class="btn btn-primary" type="button" onclick="window.print()"><%- icon('printer', '', 16) %> چاپ</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('kanban') %> قیف مراحل استخدام</h3></div>
+  <div class="card-body">
+    <div class="bars">
+      <% var maxStage = Math.max.apply(null, (byStage || []).map(function (s) { return Number(s.c) || 0; }).concat([1])); %>
+      <% (byStage || []).forEach(function (s) { %>
+        <div class="bar-row">
+          <span class="bar-label"><%= h.escapeHtml(s.name) %></span>
+          <span class="bar-track"><span class="bar-fill bg-info" style="width:<%= Math.round((Number(s.c) || 0) / maxStage * 100) %>%"></span></span>
+          <span class="bar-value"><%= h.pnum(s.c) %></span>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="card-header"><h3><%- icon('briefcase') %> داوطلبان به تفکیک موقعیت شغلی</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>موقعیت</th><th>تعداد</th></tr></thead>
+        <tbody>
+          <% (byJob || []).forEach(function (x) { %><tr><td><%= h.escapeHtml(x.title || '—') %></td><td class="num"><%= h.pnum(x.c) %></td></tr><% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3><%- icon('share') %> منابع جذب</h3></div>
+    <div class="card-body tight">
+      <table class="table compact">
+        <thead><tr><th>منبع</th><th>تعداد</th></tr></thead>
+        <tbody>
+          <% (sources || []).forEach(function (x) { %><tr><td><%= h.escapeHtml(x.s || 'نامشخص') %></td><td class="num"><%= h.pnum(x.c) %></td></tr><% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3><%- icon('brain') %> توزیع تیپ‌های شخصیتی داوطلبان</h3>
+    <div class="actions"><span class="badge badge-confidential">محرمانه — منابع انسانی</span></div>
+  </div>
+  <div class="card-body">
+    <div class="bars">
+      <% var maxT = Math.max.apply(null, (mbti || []).map(function (m) { return Number(m.c) || 0; }).concat([1])); %>
+      <% (mbti || []).forEach(function (m) { %>
+        <div class="bar-row">
+          <span class="bar-label" dir="ltr"><%= h.escapeHtml(m.type_code || '') %></span>
+          <span class="bar-track"><span class="bar-fill bg-purple" style="width:<%= Math.round((Number(m.c) || 0) / maxT * 100) %>%"></span></span>
+          <span class="bar-value"><%= h.pnum(m.c) %></span>
+        </div>
+      <% }); %>
+      <% if (!mbti || !mbti.length) { %><p class="muted center">هنوز آزمونی تکمیل نشده است.</p><% } %>
+    </div>
+    <div class="muted small">این توزیع صرفاً برای شناخت بهتر ترکیب تیم است و نباید مبنای یک‌جانبه رد یا پذیرش داوطلب قرار گیرد.</div>
+  </div>
+</div>

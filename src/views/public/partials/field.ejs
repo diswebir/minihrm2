@@ -1,0 +1,53 @@
+<%
+  var name = row ? ('f_' + f.fkey + '__' + row) : ('f_' + f.fkey);
+  var id = name;
+  var req = row ? false : Boolean(f.is_required);
+%>
+<div class="form-group">
+  <label class="field-label" for="<%= id %>"><%= h.escapeHtml(f.label) %> <% if (req) { %><span class="req">*</span><% } %></label>
+
+  <% if (f.type === 'textarea') { %>
+    <textarea id="<%= id %>" name="<%= name %>" rows="3" <%= req ? 'required' : '' %> placeholder="<%= h.escapeHtml(f.placeholder || '') %>"><%= h.escapeHtml(value) %></textarea>
+
+  <% } else if (f.type === 'select') { %>
+    <select id="<%= id %>" name="<%= name %>" <%= req ? 'required' : '' %>>
+      <option value="">— انتخاب کنید —</option>
+      <% (options || []).forEach(function (o) { %>
+        <option value="<%= h.escapeHtml(o.value) %>" <%= String(value) === String(o.value) ? 'selected' : '' %>><%= h.escapeHtml(o.label) %></option>
+      <% }); %>
+    </select>
+
+  <% } else if (f.type === 'radio') { %>
+    <div class="btn-group" data-choice-group style="flex-wrap:wrap">
+      <% (options || []).forEach(function (o) { %>
+        <label class="choice-card <%= String(value) === String(o.value) ? 'selected' : '' %>">
+          <input type="radio" name="<%= name %>" value="<%= h.escapeHtml(o.value) %>" <%= String(value) === String(o.value) ? 'checked' : '' %> <%= req ? 'required' : '' %>>
+          <%= h.escapeHtml(o.label) %>
+        </label>
+      <% }); %>
+    </div>
+
+  <% } else if (f.type === 'checkbox') { %>
+    <label class="check"><input type="checkbox" name="<%= name %>" value="بله" <%= value ? 'checked' : '' %>><span class="check-label">بله</span></label>
+
+  <% } else if (f.type === 'file') { %>
+    <input type="file" id="<%= id %>" accept="image/*,.pdf,.doc,.docx" data-public-file
+           data-upload-url="/apply/upload" data-token="<%= invite.token %>" data-target="file_target_<%= name %>">
+    <input type="hidden" id="file_target_<%= name %>" name="<%= name %>" value="<%= h.escapeHtml(value) %>">
+    <span class="field-help">فرمت مجاز: تصویر یا PDF — حداکثر ۵ مگابایت</span>
+
+  <% } else { %>
+    <input type="text"
+           id="<%= id %>" name="<%= name %>"
+           value="<%= h.escapeHtml(value) %>"
+           <%= ['national_id', 'phone', 'jalali', 'date', 'number', 'money'].includes(f.type) ? 'dir="ltr" inputmode="numeric"' : '' %>
+           <%= (f.type === 'jalali' || f.type === 'date') ? 'data-jalali' : '' %>
+           <%= f.type === 'money' ? 'data-money' : '' %>
+           <%= f.type === 'national_id' ? 'maxlength="10"' : '' %>
+           <%= f.type === 'phone' ? 'maxlength="11"' : '' %>
+           placeholder="<%= h.escapeHtml(f.placeholder || '') %>"
+           <%= req ? 'required' : '' %>>
+  <% } %>
+
+  <% if (f.help_text) { %><span class="field-help"><%= h.escapeHtml(f.help_text) %></span><% } %>
+</div>
